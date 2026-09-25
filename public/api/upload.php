@@ -3,7 +3,6 @@
  *   type=avatar                 → square 256px AVIF avatar (re-compressed; original never stored)
  *   type=event_logo event=<id>  → event logo, max 512px AVIF (manage rights; #151)
  *   type=photo   roadbook=<id>  → gallery photo, max 1600px AVIF
- *   type=audio   roadbook=<id>  → waypoint voice note, stored as-is (no transcoding)
  *   type=run_card run=<id>      → the run's shareable image, 1080px AVIF (the runner's own run, #785) */
 require dirname(__DIR__, 2) . '/app/bootstrap.php';
 require dirname(__DIR__, 2) . '/app/images.php';
@@ -14,35 +13,13 @@ $user = require_user();
 require_same_origin();
 $type = $_POST['type'] ?? '';
 
-// The optional geotag of a media upload: a valid pair, or nulls (shared by audio + photo, #214).
+// The optional geotag of a photo upload: a valid pair, or nulls (#214).
 function post_latlon(): array {
     $lat = (isset($_POST['lat']) && $_POST['lat'] !== '') ? (float)$_POST['lat'] : null;
     $lon = (isset($_POST['lon']) && $_POST['lon'] !== '') ? (float)$_POST['lon'] : null;
     if ($lat !== null && ($lat < -90 || $lat > 90)) $lat = null;
     if ($lon !== null && ($lon < -180 || $lon > 180)) $lon = null;
     return [$lat, $lon];
-}
-
-if ($type === 'audio') {
-    // Voice note: the recorded clip kept as-is (an imported .rdbk can bundle them), so it can be
-    // replayed on its note. Geolocated, so the Editor can tie it
-    // to the note at that position. App/server feature only — never inside the .rdbk.
-    if (empty($_FILES['audio']['tmp_name']) || !is_uploaded_file($_FILES['audio']['tmp_name'])) fail('No audio uploaded.');
-    if (($_FILES['audio']['size'] ?? 0) > 12 * 1024 * 1024) fail('Audio too large (max 12 MB).');
-    $rbId = (int)($_POST['roadbook'] ?? 0);
-    $rb = rb_require_edit($user, $rbId); // the owner or an event co-editor; never a trashed roadbook
-    $cnt = db()->prepare('SELECT COUNT(*) c FROM roadbook_audio WHERE roadbook_id = ?'); $cnt->execute([$rbId]);
-    if ((int)$cnt->fetch()['c'] >= 200) fail('Too many voice notes (200 max).');
-    rb_assert_quota((int)$rb['user_id'], 0, (int)$_FILES['audio']['size']); // media counts against the roadbook's OWNER
-    [$lat, $lon] = post_latlon();
-    // Extension from the browser-reported MIME (MediaRecorder output differs by browser); default webm.
-    $ext = ['audio/webm' => 'webm', 'video/webm' => 'webm', 'audio/ogg' => 'ogg', 'audio/mp4' => 'm4a', 'audio/mpeg' => 'mp3', 'audio/wav' => 'wav'][$_FILES['audio']['type'] ?? ''] ?? 'webm';
-    $fn = bin2hex(random_bytes(8)) . '.' . $ext; // unguessable → private voice notes can't be enumerated
-    $dir = $CFG['audio_dir'] . '/' . $rbId;
-    if (!is_dir($dir)) mkdir($dir, 0755, true);
-    if (!move_uploaded_file($_FILES['audio']['tmp_name'], $dir . '/' . $fn)) fail('Could not store the audio.');
-    db()->prepare('INSERT INTO roadbook_audio (roadbook_id, filename, lat, lon) VALUES (?,?,?,?)')->execute([$rbId, $fn, $lat, $lon]);
-    json_out(['ok' => true, 'id' => (int)db()->lastInsertId(), 'url' => '/audio/' . $rbId . '/' . $fn, 'lat' => $lat, 'lon' => $lon]);
 }
 
 // Images (avatar / photo) → re-compressed to AVIF; the original is never stored.

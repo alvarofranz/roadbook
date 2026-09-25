@@ -39,9 +39,8 @@ DB/Convenzioni rapide below have counterparts there).
   loopback + private ranges) names the reverse proxies whose `X-Forwarded-For` `client_ip()` believes
   — the key of every rate limit; behind Cloudflare's proxy, add its ranges.
   DB schema = `migrations/*.sql` (source of truth): `users`, `roadbooks`, `roadbook_photos`,
-  `roadbook_audio`, `roadbook_locks`, `roadbook_runs`, `roadbook_comments`, `api_tokens`,
-  `activity_log`, `settings`, plus the events family (`events`, `event_roadbooks`,
-  `event_rb_next`, `event_organizers`, `event_participants`, `event_results`, `event_live`).
+  `roadbook_locks`, `roadbook_runs`, `roadbook_comments`, `api_tokens`, `activity_log`, `settings`,
+  plus the events family (`events`, `event_roadbooks`, `event_rb_next`, `event_organizers`, `event_participants`, `event_results`, `event_live`).
 - Repo: GitHub `alvarofranz/roadbook`. License **MIT**.
 - UI languages: **English (default) · Spanish · Italian · German · French**, browser
   auto-detected. English is the source (in `i18n.js`); each other language lives in its own
@@ -356,7 +355,7 @@ DB access on the box is the native `mariadb` client.
 guideline above): it wipes untracked local data and is rarely needed. TWO steps, DB *and*
 files.** The panel dump is
 **DB-only**: roadbook payloads live on disk (`storage/users/<user_id>/<id>.rdbk`,
-`app/roadbooks.php`) with photos in `public/photos/<id>/` and voice notes in `public/audio/<id>/`.
+`app/roadbooks.php`, voice notes inside) with photos in `public/photos/<id>/`.
 Import the dump alone and every row points at a file that isn't there — the API answers
 `{"ok":false,"error":"File missing."}` on every roadbook. So:
 ```bash
@@ -366,8 +365,8 @@ curl -fsSL -H "X-Admin-Key: $VPS_KEY" \
 ddev import-db --file=~/rdbk-fresh.sql.gz && rm -f ~/rdbk-fresh.sql.gz
 
 # 2. files — for each PUBLIC roadbook, pull the payload prod already serves publicly
-#    (repeat per slug from `public_list`; same idea for /photos/<id>/<file>,
-#     /audio/<id>/<file> and /event-logos/<id>.avif)
+#    (repeat per slug from `public_list`; same idea for /photos/<id>/<file>
+#     and /event-logos/<id>.avif)
 curl -s -X POST https://rdbk.app/api/index.php -H 'Content-Type: application/json' \
   -d '{"action":"public_get","slug":"<slug>"}' | jq -c '.roadbook' \
   > storage/users/<user_id>/<id>.rdbk
@@ -375,7 +374,7 @@ curl -s -X POST https://rdbk.app/api/index.php -H 'Content-Type: application/jso
 The dump holds real emails + password hashes — keep it private and delete it right after
 importing. Step 2 only reaches **public** roadbooks; drafts have no public URL and the panel has
 no file route, so their pages stay "File missing" locally until someone `rsync`s
-`storage/users/`, `public/photos/` and `public/audio/` off the prod host.
+`storage/users/` and `public/photos/` off the prod host.
 
 Verify with the API, not by eye: `public_list` should return prod's ids and `public_get` on a
 slug should come back `ok` with the note/track counts prod reports. If the site still shows stale
@@ -825,8 +824,8 @@ Build/test/release steps are in `NATIVE.md`. Toolchain: Node ≥22 + JDK 21 (Cap
 ## The `.rdbk` format (open standard, documented at /standard)
 **Version 1** (`"rdbk_version": 1`, `RB.FORMAT_VERSION`). A **ZIP container** (MIME
 `application/x-roadbook`) holding `roadbook.json` — the self-contained roadbook — plus optional
-geotagged media: `media.json` (`{ photos: [{ file: "photos/…", lat?, lon? }], audio: [...] }`),
-`photos/…`, `audio/…` (bundled only when the exporter includes them; #162). A reader detects the ZIP
+geotagged photos: `media.json` (`{ photos: [{ file: "photos/…", lat?, lon? }] }`) and
+`photos/…` (bundled only when the exporter includes them; #162). A reader detects the ZIP
 by its `PK` magic; a bare JSON file is read as a naked `roadbook.json`. Server-side storage is JSON
 — the document as the client sent it; the ZIP is the export/import artifact. Spec page:
 `public/standard/index.html`; full reference: `docs/rdbk-format.md`; in-browser checker:
@@ -898,10 +897,12 @@ schema:
   the set stylistically consistent. The palette is **canonical**: the Editor refreshes the
   used standard symbols embedded in a roadbook on open and on save/export (#174), so art
   updates propagate to older roadbooks; custom (user-uploaded) symbols are never touched.
-- The roadbook's geotagged **photos** and its server-side audio clips (`roadbook_audio`) live
-  **server-side** (per roadbook) and travel in the `.rdbk` ZIP only as the **optional**
-  `photos/`/`audio/` + `media.json` bundle — never inside `roadbook.json`. A note's **voice note** is part
-  of the note itself: a `voice` block whose `audio` is a `data:` URI inside `roadbook.json` (#992).
+- The roadbook's geotagged **photos** live **server-side** (per roadbook) and travel in the `.rdbk`
+  ZIP only as the **optional** `photos/` + `media.json` bundle — never inside `roadbook.json`. A note's
+  **voice note** is part of the note itself: a `voice` block whose `audio` is a `data:` URI inside
+  `roadbook.json` (#992) — on the server it lives in the roadbook document (outside the web root,
+  served only through the roadbook's access checks) and counts in the quota as part of that file. A
+  roadbook document is at most 60 MB (`RB_MAX_BYTES`; `rb_save` refuses a bigger one).
 
 ## Conventions
 - Tool pages are one level deep → relative `../assets/…`; the challenge page uses

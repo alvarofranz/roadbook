@@ -363,10 +363,6 @@ Carica **un'immagine** su `upload.php`. Riduce prima il file con `RBImg.toBlob`,
 campo `photo` insieme ai `fields` extra (`type` = avatar/event_logo/photo/cover, §6 di
 [backend-api](backend-api.md)). Ritorna il JSON, o `{ ok: false, error: 'Upload failed.' }` in errore.
 
-#### `RBUploadAudio(fields, blob, name) → Promise<object>`
-Carica **una clip audio** (una nota vocale) su `upload.php` come campo `audio` — senza passare dal
-downscaler immagini. Usato dalla coda media condivisa (`RBMediaQueue`) per le voci di tipo `audio`.
-
 #### `RBDownload(data, filename)`
 Scarica un Blob **o** una URL stringa. Nel browser
 crea un `<a download>` e lo clicca; **nell'app** `<a download>` è ignorato dalla WebView, quindi

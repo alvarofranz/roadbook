@@ -49,17 +49,25 @@ describe('credentials', () => {
 });
 
 describe('roadbook media and storage', () => {
-    it('gallery photos and voice notes are listed only to who may edit the roadbook (#316)', () => {
+    it('gallery photos are listed only to who may edit the roadbook (#316)', () => {
         expect(roadbooks).not.toContain('rb_media_readable');
         expect(fn(roadbooks, 'ph_list')).toContain('rb_require_edit($user, $rbId);');
-        expect(fn(roadbooks, 'audio_list')).toContain('rb_require_edit($user, $rbId);');
         expect(router).toContain("case 'ph_list':     ph_list(require_user(), $d); break;");
-        expect(router).toContain("case 'audio_list':   audio_list(require_user(), $d); break;");
+    });
+    it('a voice note lives inside its roadbook: no server-side clips, no audio upload (#992)', () => {
+        expect(roadbooks + router + upload).not.toMatch(/roadbook_audio|audio_list|audio_delete|audio_dir/);
+        expect(read('app/bootstrap.php')).not.toContain('audio_dir');
+        expect(read('migrations/047_drop_roadbook_audio.sql')).toContain('DROP TABLE IF EXISTS roadbook_audio;');
+    });
+    it('a roadbook may be up to 60 MB, and a bigger one is refused with the reason', () => {
+        expect(read('app/bootstrap.php')).toContain('const RB_MAX_BYTES = 60 * 1024 * 1024;');
+        expect(read('app/bootstrap.php')).toContain("if ((int)($_SERVER['CONTENT_LENGTH'] ?? 0) > RB_MAX_BYTES + 4 * 1024 * 1024) fail('This roadbook is too large (60 MB at most).', 413);");
+        expect(fn(roadbooks, 'rb_save')).toContain("if (strlen($json) > RB_MAX_BYTES) fail('This roadbook is too large (60 MB at most).', 413);");
     });
     it('uploading and moving media follows the edit right, never a trashed roadbook', () => {
-        expect(upload.match(/\$rb = rb_require_edit\(\$user, \$rbId\);/g).length).toBe(2); // audio + photo
+        expect(upload.match(/\$rb = rb_require_edit\(\$user, \$rbId\);/g).length).toBe(1); // the photo
         expect(upload).not.toContain('WHERE id = ? AND user_id = ?');
-        expect(upload.match(/rb_assert_quota\(\(int\)\$rb\['user_id'\]/g).length).toBe(2); // the OWNER's quota
+        expect(upload.match(/rb_assert_quota\(\(int\)\$rb\['user_id'\]/g).length).toBe(1); // the OWNER's quota
         expect(fn(roadbooks, 'ph_move')).toContain('rb_require_edit($user, $rbId);');
     });
     it('a duplicate is charged against the quota before anything is copied', () => {

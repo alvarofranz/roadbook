@@ -22,21 +22,20 @@ function rrmdir(string $dir): void {
     }
     @rmdir($dir);
 }
-// Every roadbook id a user owns — the media dirs (photos/audio) are keyed by roadbook id.
+// Every roadbook id a user owns — the photo dirs are keyed by roadbook id.
 function user_roadbook_ids(int $uid): array {
     $st = db()->prepare('SELECT id FROM roadbooks WHERE user_id = ?');
     $st->execute([$uid]);
     return array_map('intval', $st->fetchAll(PDO::FETCH_COLUMN));
 }
-// Bytes a user occupies on disk: their .rdbk files + every roadbook's photo AND audio folders
-// (#210 — voice notes count like photos). Pass the pre-fetched roadbook ids when listing many
-// users (admin_users) — one query, not one each.
+// Bytes a user occupies on disk: their .rdbk files (the voice notes live inside them) + every
+// roadbook's photo folder. Pass the pre-fetched roadbook ids when listing many users (admin_users)
+// — one query, not one each.
 function user_disk_bytes(int $uid, ?array $rbIds = null): int {
     global $CFG;
     $bytes = dir_size($CFG['storage'] . '/' . $uid);
     foreach ($rbIds ?? user_roadbook_ids($uid) as $rid) {
         $bytes += dir_size($CFG['photos_dir'] . '/' . (int)$rid);
-        $bytes += dir_size($CFG['audio_dir'] . '/' . (int)$rid);
     }
     return $bytes;
 }
@@ -49,7 +48,7 @@ function user_quota_bytes(array $user): int {
 // DELETE must never leave a live account whose files are already gone.
 function purge_user_files(int $uid, array $rbIds): void {
     global $CFG;
-    foreach ($rbIds as $rid) { rrmdir($CFG['photos_dir'] . '/' . (int)$rid); rrmdir($CFG['audio_dir'] . '/' . (int)$rid); }
+    foreach ($rbIds as $rid) rrmdir($CFG['photos_dir'] . '/' . (int)$rid);
     @unlink($CFG['avatars_dir'] . '/' . $uid . '.avif'); // the avatar is profile data — it goes with the account (#234)
     rrmdir($CFG['storage'] . '/' . $uid);
 }
@@ -71,8 +70,8 @@ function graveyard_user_id(): int {
 // gets the former username prefixed to its title, its .rdbk file moves to the graveyard's
 // storage, and it lands in the TRASH (status 'deleted') — visible in /admin/trash/, restorable
 // for the standard 30 days (the UPDATE bumps updated_at, restarting the countdown at account
-// deletion), then purged for good by the cron. The photo/audio folders are roadbook-keyed and
-// stay put until that purge.
+// deletion), then purged for good by the cron. The photo folders are roadbook-keyed and stay put
+// until that purge.
 function reassign_roadbooks_to_graveyard(int $uid, string $username): void {
     global $CFG;
     $st = db()->prepare('SELECT id, title, filename FROM roadbooks WHERE user_id = ?');
@@ -88,13 +87,12 @@ function reassign_roadbooks_to_graveyard(int $uid, string $username): void {
         $up->execute([$gid, $title, (int)$r['id']]);
     }
 }
-// Remove ONE roadbook's files: its owner-scoped .rdbk + its id-scoped photo/audio folders. Used
+// Remove ONE roadbook's files: its owner-scoped .rdbk + its id-scoped photo folder. Used
 // when permanently purging a trashed roadbook (#187) — admin "delete now" and the 30-day cron.
 function purge_roadbook_files(int $rbId, int $ownerId, string $filename): void {
     global $CFG;
     if ($filename !== '' && $filename !== 'pending') @unlink($CFG['storage'] . '/' . $ownerId . '/' . $filename);
     rrmdir($CFG['photos_dir'] . '/' . $rbId);
-    rrmdir($CFG['audio_dir'] . '/' . $rbId);
 }
 
 function admin_users(array $user, array $d = []): void {
@@ -352,8 +350,8 @@ function admin_rb_purge(array $user, array $d): void {
     json_out(['ok' => true, 'id' => $id]);
 }
 
-// One batch of the trash past retention, hard-deleted — row first (it cascades to the photo and
-// audio rows), then the files. Shared by the cron and the admin's "empty expired" button. A
+// One batch of the trash past retention, hard-deleted — row first (it cascades to the photo rows),
+// then the files. Shared by the cron and the admin's "empty expired" button. A
 // trashed row is never updated again (see admin_move_roadbook), so `updated_at` is when it was
 // trashed. Returns how many went and the first ids, for the audit trail.
 function purge_expired_trash(int $limit): array {
@@ -408,8 +406,8 @@ function admin_move_roadbook(array $user, array $d): void {
     json_out(['ok' => true, 'id' => $id]);
 }
 // Hand a roadbook to another owner. The .rdbk file is the only owner-scoped file (it lives under
-// storage/<user_id>/), so it moves between the two dirs; photos and audio are keyed by roadbook
-// id and stay put, and the disk quota is recomputed per user (#126). The row is the source of
+// storage/<user_id>/), so it moves between the two dirs; photos are keyed by roadbook id and stay
+// put, and the disk quota is recomputed per user (#126). The row is the source of
 // truth: the owner changes FIRST, then the file moves — if the rename fails the row already points
 // at the new owner and the file is recoverable by hand, never a row whose owner's dir no longer
 // holds the file.

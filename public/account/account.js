@@ -333,20 +333,14 @@
             const r = await api('rb_get', { id: rbMeta.id });
             if (!r.ok || !r.roadbook) continue;
             const innerFiles = { 'roadbook.json': JSON.stringify(r.roadbook) }; // the server keeps each roadbook as its .rdbk document
-            const media = { photos: [], audio: [] };
+            const media = { photos: [] };
             const ph = await api('ph_list', { roadbook: rbMeta.id });
             if (ph.ok && ph.photos) {
                 for (const p of ph.photos) {
                     try { const res = await fetch(RBMediaSrc(p.url)); if (!res.ok) continue; const name = 'photos/' + p.url.split('/').pop(); innerFiles[name] = new Uint8Array(await res.arrayBuffer()); media.photos.push({ file: name, lat: p.lat, lon: p.lon }); } catch (e) {}
                 }
             }
-            const au = await api('audio_list', { roadbook: rbMeta.id });
-            if (au.ok && au.audio) {
-                for (const a of au.audio) {
-                    try { const res = await fetch(RBMediaSrc(a.url)); if (!res.ok) continue; const name = 'audio/' + a.url.split('/').pop(); innerFiles[name] = new Uint8Array(await res.arrayBuffer()); media.audio.push({ file: name, lat: a.lat, lon: a.lon }); } catch (e) {}
-                }
-            }
-            if (media.photos.length || media.audio.length) innerFiles['media.json'] = JSON.stringify(media);
+            if (media.photos.length) innerFiles['media.json'] = JSON.stringify(media);
             const slug = (RB.slug(r.roadbook.meta.title) || 'roadbook') + '_' + rbMeta.id;
             outerFiles[slug + '.rdbk'] = new Uint8Array(await (await RBZip.write(innerFiles)).arrayBuffer());
         }

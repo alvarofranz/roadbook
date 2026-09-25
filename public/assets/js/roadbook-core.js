@@ -1036,34 +1036,31 @@
         compatibility(doc.compatibility, 'compatibility');
         return { valid: !errors.length, errors, warnings };
     }
-    // A .rdbk container's media.json against the entries the ZIP really holds: { files: [...] } →
-    // { valid, errors, warnings }, the same report as validateRoadbook. Absent, there is no media.
+    // A .rdbk container's media.json (where each bundled photo was taken) against the entries the ZIP
+    // really holds → { valid, errors, warnings }, the same report as validateRoadbook. Absent, there
+    // are no photos.
     function validateMedia(manifest, names) {
         const errors = [], warnings = [], listed = new Set();
         const err = (path, message, values) => errors.push(values ? { path, message, values } : { path, message }), warn = (path, message) => warnings.push({ path, message });
         if (manifest != null) {
             if (!isObj(manifest)) err('media.json', 'Must be an object.');
             else {
-                Object.keys(manifest).forEach((k) => { if (!['photos', 'audio'].includes(k)) warn('media.json.' + k, 'Unknown key: readers ignore it.'); });
-                ['photos', 'audio'].forEach((kind) => {
-                    const list = manifest[kind];
-                    if (list === undefined) return;
-                    if (!Array.isArray(list)) return err('media.json.' + kind, 'Must be a list.');
-                    list.forEach((m, i) => {
-                        const path = 'media.json.' + kind + '[' + i + ']';
-                        if (!isObj(m)) return err(path, 'Must be an object.');
-                        const dir = kind === 'photos' ? 'photos/' : 'audio/';
-                        if (typeof m.file !== 'string' || !m.file.startsWith(dir)) err(path + '.file', 'Must be a path inside {values}.', dir);
-                        else if (!names.includes(m.file)) err(path + '.file', 'Must be a file inside the container.');
-                        else listed.add(m.file);
-                        if (m.lat !== undefined && !(isNum(m.lat) && Math.abs(m.lat) <= 90)) err(path + '.lat', 'Must be a latitude from -90 to 90.');
-                        if (m.lon !== undefined && !(isNum(m.lon) && Math.abs(m.lon) <= 180)) err(path + '.lon', 'Must be a longitude from -180 to 180.');
-                    });
+                Object.keys(manifest).forEach((k) => { if (k !== 'photos') warn('media.json.' + k, 'Unknown key: readers ignore it.'); });
+                const list = manifest.photos;
+                if (list !== undefined && !Array.isArray(list)) err('media.json.photos', 'Must be a list.');
+                else (list || []).forEach((m, i) => {
+                    const path = 'media.json.photos[' + i + ']';
+                    if (!isObj(m)) return err(path, 'Must be an object.');
+                    if (typeof m.file !== 'string' || !m.file.startsWith('photos/')) err(path + '.file', 'Must be a path inside {values}.', 'photos/');
+                    else if (!names.includes(m.file)) err(path + '.file', 'Must be a file inside the container.');
+                    else listed.add(m.file);
+                    if (m.lat !== undefined && !(isNum(m.lat) && Math.abs(m.lat) <= 90)) err(path + '.lat', 'Must be a latitude from -90 to 90.');
+                    if (m.lon !== undefined && !(isNum(m.lon) && Math.abs(m.lon) <= 180)) err(path + '.lon', 'Must be a longitude from -180 to 180.');
                 });
             }
         }
-        names.filter((n) => /^(photos|audio)\//.test(n) && !/\/$/.test(n) && !listed.has(n)).forEach((n) => warn(n, 'Not listed in media.json: it has no position.'));
-        names.filter((n) => !/^(photos|audio)\//.test(n) && !['roadbook.json', 'media.json'].includes(n)).forEach((n) => warn(n, 'Unknown entry: readers ignore it.'));
+        names.filter((n) => n.startsWith('photos/') && !/\/$/.test(n) && !listed.has(n)).forEach((n) => warn(n, 'Not listed in media.json: it has no position.'));
+        names.filter((n) => !n.startsWith('photos/') && !['roadbook.json', 'media.json'].includes(n)).forEach((n) => warn(n, 'Unknown entry: readers ignore it.'));
         return { valid: !errors.length, errors, warnings };
     }
     // A .rdbk document → a roadbook in memory (a Roadbook Suite file is imported instead). Throws

@@ -132,7 +132,7 @@ Dettagli rilevanti:
   `user_disk_bytes`, `dir_size`, `rrmdir`) vivono in admin.php. L'ordine è: si raccolgono
   **prima** gli id dei roadbook dell'utente (`user_roadbook_ids`, servono a risolvere le
   cartelle media), si esegue la **DELETE della riga** utente (le righe collegate —
-  roadbook/foto/note vocali/token — cadono per `ON DELETE CASCADE`), e **solo dopo** si
+  roadbook/foto/token — cadono per `ON DELETE CASCADE`), e **solo dopo** si
   cancellano i file (`purge_user_files($uid, $rbIds)`). Così una DELETE fallita non lascia mai
   un account vivo senza i suoi file.
 
@@ -249,8 +249,8 @@ dal deploy automatico:
 ## 8. Limiti e quirk
 
 - **Quota disco fissa per default.** La quota è `DEFAULT_QUOTA_BYTES` (50 MB) salvo override
-  per-utente in `quota_bytes`; applicata solo agli upload di foto/audio (413 al superamento),
-  non ai file `.rdbk`.
+  per-utente in `quota_bytes`; applicata agli upload di foto e ai salvataggi dei roadbook (il file `.rdbk`, note vocali
+  comprese) — `413` al superamento.
 - **Due ruoli, non granulari.** `is_admin` e `is_organizer` sono binari; non ci sono permessi
   più fini oltre a questi.
 - **Password temporanea in chiaro nel form.** Il campo password dell'edit-utente è di tipo

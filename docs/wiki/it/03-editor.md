@@ -2,7 +2,7 @@
 
 L'**Editor** è l'hub di creazione: qui trasformi una traccia grezza (o un foglio bianco) in un roadbook completo con note, CAP, danger, tipi strada, icone, vignette.
 
-> **Funziona offline** per editing puro. Serve connessione per: login, caricare/salvare sul profilo, upload foto/audio, importare challenge pubbliche, export PDF/GPX (usa librerie lazy-loaded).
+> **Funziona offline** per editing puro. Serve connessione per: login, caricare/salvare sul profilo, upload foto, importare challenge pubbliche, export PDF/GPX (usa librerie lazy-loaded).
 
 ---
 
@@ -190,12 +190,6 @@ Tap pin / miniatura → visore a pieno schermo (copre solo mappa, **non** pannel
 
 ---
 
-## Note vocali — player
-
-Le note vocali già registrate sono salvate server-side (`roadbook_audio`, `audio_list`/`audio_delete`). Ognuna compare come **player audio** sulla riga nota più vicina (≤80m), con una **×** per eliminarla (la conferma nomina la nota).
-
----
-
 ## Export & Save to profile
 
 Pulsante **Export** → pop-up con tutti i formati. **Save** (salvataggio profilo) separato. Ogni export chiude pop-up, conferma **una volta** tagli aperti, ricalcola metriche.
@@ -204,7 +198,7 @@ Pulsante **Export** → pop-up con tutti i formati. **Save** (salvataggio profil
 
 | Formato | Funzione | Output |
 |---------|----------|--------|
-| **.rdbk** | `exportRdbk(includeMedia)` | ZIP: `roadbook.json` auto-contenuto scritto da `RB.writeRoadbook` e verificato da `RB.validateRoadbook` (`embedUsed` embedda i simboli usati, pota gli standard inutilizzati) + opzionale `photos/`/`audio/`/`media.json` |
+| **.rdbk** | `exportRdbk(includeMedia)` | ZIP: `roadbook.json` auto-contenuto scritto da `RB.writeRoadbook` e verificato da `RB.validateRoadbook` (`embedUsed` embedda i simboli usati, pota gli standard inutilizzati) + opzionale `photos/` + `media.json` |
 | **PDF** | `exportPdf` | A4 via `RBPdf.generate` (jsPDF lazy, `rb-pdf.js`) |
 | **GPX** | `exportCustomGpx` | Checkbox componibili (Traccia / Waypoint / Garmin icons / OSMAnd icons / OpenRally file separato) |
 | **OpenRally** | `exportOpenRally` | `RB.openRallyDocument` → `…_OR.gpx` (GPX 1.1 + namespace `openrally:`) |

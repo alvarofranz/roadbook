@@ -85,7 +85,6 @@ describe('media and links that work inside the app', () => {
     it('the data export and the run cards load media through RBMediaSrc', () => {
         const account = read('public/account/account.js');
         expect(account).toContain('await fetch(RBMediaSrc(p.url))');
-        expect(account).toContain('await fetch(RBMediaSrc(a.url))');
         expect(read('public/assets/js/profile-page.js')).toContain('const cardSrc = r.card ? RBMediaSrc(r.card) : \'\';');
     });
     it('the event page uses the shared sign-in link, config and palette', () => {

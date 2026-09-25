@@ -2,7 +2,7 @@
 
 Bienvenue ! RDBK.app est une PWA (Progressive Web App) pour créer, partager et suivre des roadbooks numériques. Elle fonctionne **entièrement dans le navigateur** — rien à installer, mais vous pouvez aussi l'« installer » comme une application sur votre téléphone.
 
-L'application fonctionne **hors ligne** pour l'enregistrement, l'édition et la navigation. Une connexion n'est nécessaire que pour : la connexion, la sauvegarde sur le profil, l'envoi de photos/audio, les pages publiques.
+L'application fonctionne **hors ligne** pour l'enregistrement, l'édition et la navigation. Une connexion n'est nécessaire que pour : la connexion, la sauvegarde sur le profil, l'envoi de photos, les pages publiques.
 
 ---
 
@@ -60,7 +60,7 @@ La connexion vous permet de sauvegarder vos roadbooks sur le cloud et de les ret
 |----------|----------------|
 | **Statut du roadbook** | `draft` = brouillon privé · `ready` = prêt mais privé · `public` = visible par tous dans la galerie |
 | **Sauvegarde locale vs cloud** | Dans l'Editor : **Export .rdbk** = fichier ZIP sur votre appareil (hors ligne, portable). **Save to profile** = sauvegardé sur le serveur, retrouvé sur tout appareil connecté |
-| **Photos & notes vocales** | Elles ne vont pas dans le `.rdbk` à moins de cocher « Inclure photos et audio » à l'export. Elles vivent sur le serveur (connexion requise). Hors connexion elles restent sur l'appareil et vont dans le `.rdbk` local |
+| **Photos & notes vocales** | Une note vocale fait partie de sa note : elle voyage donc toujours dans le `.rdbk`. Les photos ne vont dans le `.rdbk` que si vous cochez « Inclure les photos dans le .rdbk » à l'export. Elles vivent sur le serveur (connexion requise). Hors connexion elles restent sur l'appareil et vont dans le `.rdbk` local |
 | **Code d'accès événement** | Code court (ex. `DA2C09`) que l'organisateur vous donne. Ouvrez `/go/DA2C09` → vous entrez dans l'événement, voyez les roadbooks `ready` réservés aux participants |
 | **Score de course (Ranking)** | Uniquement en mode **Competition** dans le Reader. Génère un QR signé de 55 caractères en fin d'épreuve. |
 

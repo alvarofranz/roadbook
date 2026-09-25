@@ -792,9 +792,9 @@
         try {
             const b = await RBZip.readBundle(f);
             resetIdentity(); pendingMedia = b.media; setRoadbook(RB.readRoadbook(b.roadbook));
-            if (pendingMedia.length) { // the bundle carries photos/audio → they only appear once re-uploaded on save (#162)
-                const d = RBModal(`<h3><i class="fa-solid fa-images icon-accent"></i> ${esc(t('Photos & audio'))}</h3>
-                    <p class="muted">${esc(t('This roadbook includes photos or voice notes. They stay hidden until you save it to your profile.'))}</p>`, 'narrow');
+            if (pendingMedia.length) { // the bundle carries photos → they only appear once re-uploaded on save (#162)
+                const d = RBModal(`<h3><i class="fa-solid fa-images icon-accent"></i> ${esc(t('Photos'))}</h3>
+                    <p class="muted">${esc(t('This roadbook includes photos. They stay hidden until you save it to your profile.'))}</p>`, 'narrow');
             }
         }
         catch (err) { toast(err.report ? 'This file is not a valid .rdbk roadbook.' : 'This file is not a roadbook.'); }
@@ -850,7 +850,7 @@
         ['toolAddGpx', 'toolSimplify', 'toolAdjust'].forEach((id) => $(id).disabled = readOnly());
         $('toolShortcuts').disabled = false;
         fillSettings();
-        updatePhotos(); updateAudio(); updateSaveBtn();
+        updatePhotos(); updateSaveBtn();
         refreshMap(false); renderNotes(); renderIcons(); reportUnresolvedIcons();
         sel = 0;
         if (rb.notes.length) { showOnCanvas(0); renderEditor(); } else canvas.setNote(null);
@@ -1103,7 +1103,7 @@
             if (!rb.notes.some((n) => n.track_index === idx)) { const note = RB.blankNote(idx, roadOutBefore(idx)); note.text = w.text || ''; rb.notes.push(note); }
         });
         RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
-        sel = 0; refreshMap(false); renderNotes(); renderEditor(); showOnCanvas(0); updatePhotos(); updateAudio(); markDirty();
+        sel = 0; refreshMap(false); renderNotes(); renderEditor(); showOnCanvas(0); updatePhotos(); markDirty();
         toast('Trail adjusted · metrics recomputed.');
     }
     // Replace the track after i1 (up to i2, or to the end) with `newTrk`; its points keep their
@@ -1139,8 +1139,7 @@
     paintVehicles();
     let rbIsOwner = true, rbOwner = ''; // co-editing an event roadbook (#123): visibility + delete stay with the owner
     let notePhotos = []; // the saved roadbook's geotagged photos (for the per-note IMG pill)
-    let noteAudio = []; // the saved roadbook's voice notes (shown on their nearest note row)
-    let pendingMedia = []; // media bundled in an imported .rdbk v2, uploaded to the gallery on the first save (#162)
+    let pendingMedia = []; // photos bundled in an imported .rdbk, uploaded to the gallery on the first save (#162)
     $('visDraft').onclick = () => { setStatus('draft'); markDirty(); };
     $('visReady').onclick = () => { setStatus('ready'); markDirty(); };
     $('visPublic').onclick = () => { setStatus('public'); markDirty(); };
@@ -1193,18 +1192,16 @@
     }
     // fresh content (imported GPX / .rdbk) is a NEW roadbook, even mid-edit of a saved one
     function resetIdentity() { currentRbId = 0; publicSlug = null; setStatus('draft'); reusable = false; vehicles = ['car']; paintVehicles(); pendingMedia = []; setOwnership(true, ''); setLock({ mine: true }); try { history.replaceState(null, '', location.pathname); } catch (e) {} }
-    // Media bundled in an imported .rdbk v2 (#162): once the roadbook has a server id, upload each
-    // photo/audio into its gallery with the geotag from the bundle's manifest, then clear the queue.
+    // Photos bundled in an imported .rdbk (#162): once the roadbook has a server id, upload each into
+    // its gallery with the geotag from the bundle's manifest, then clear the queue.
     async function flushImportedMedia() {
         const items = pendingMedia; pendingMedia = [];
         for (const it of items) {
             const fields = { roadbook: String(currentRbId) };
             if (it.lat != null) fields.lat = it.lat;
             if (it.lon != null) fields.lon = it.lon;
-            try {
-                if (it.type === 'audio') await RBUploadAudio({ type: 'audio', ...fields }, it.blob, it.name);
-                else await RBUpload({ type: 'photo', ...fields }, it.blob, it.name);
-            } catch (e) { /* skip a media file that won't upload — never fail the save */ }
+            try { await RBUpload({ type: 'photo', ...fields }, it.blob, it.name); }
+            catch (e) { /* skip a photo that won't upload — never fail the save */ }
         }
     }
     /* The roadbook as its .rdbk document, judged by the same validator every reader uses — or null,
@@ -1224,9 +1221,9 @@
         const r = await RBApi('rb_save', { id: currentRbId, status, reusable, vehicles, roadbook: doc });
         if (r.ok) {
             currentRbId = r.id; if (r.slug) publicSlug = r.slug; dirty = false; clearDraft();
-            if (pendingMedia.length) await flushImportedMedia(); // upload media bundled in an imported .rdbk (#162)
-            RBMediaQueue.flush(); // photos/voice notes queued by the Recorder now have a roadbook to join (#648)
-            updatePhotos(); updateAudio(); updateSaveBtn();
+            if (pendingMedia.length) await flushImportedMedia(); // upload photos bundled in an imported .rdbk (#162)
+            RBMediaQueue.flush(); // photos queued by the Recorder now have a roadbook to join (#648)
+            updatePhotos(); updateSaveBtn();
             // pin the identity to the URL so a reload (or version auto-refresh) keeps editing the same roadbook
             try { history.replaceState(null, '', location.pathname + '?rb=' + currentRbId); } catch (e) {}
         }
@@ -1333,16 +1330,6 @@
         // every photo is a pin on the map; tapping a pin (or a thumbnail) opens the lightbox
         if (map) map.setPhotos(notePhotos, (ph) => { if (!photoPlacing && ph && ph.id != null) openLightbox(+ph.id); });
         if (rb) renderNotes(); // refresh the per-note IMG pills
-    }
-    /* ---------- voice notes (recorded audio) — shown on their nearest note's row ---------- */
-    function updateAudio() {
-        if (currentRbId > 0) loadAudio();
-        else { noteAudio = []; if (rb) renderNotes(); }
-    }
-    async function loadAudio() {
-        const r = await RBApi('audio_list', { roadbook: currentRbId });
-        noteAudio = ((r.ok && r.audio) || []).map((a) => ({ ...a, url: RBMediaSrc(a.url) })); // absolute in the app (#232)
-        if (rb) renderNotes(); // each clip surfaces on its nearest note row
     }
     /* ---------- photo upload: every photo needs coordinates ---------- */
     // Read GPS from the JPEG's EXIF; if absent, queue the file and let the user tap the
@@ -1492,10 +1479,8 @@
         const keepListScroll = $('noteList') ? $('noteList').scrollTop : 0;
         const keepWinScroll = window.scrollY;
         parkEditor(); // park the editor + tulip before wiping the list (innerHTML would destroy moved elements)
-        // geotagged media belongs to its nearest note (within 80 m): photos → an IMG pill under the
-        // km, voice notes → an inline player on that row
+        // a geotagged photo belongs to its nearest note (within 80 m): an IMG pill under the km
         const photosByNote = RB.mediaByNote(rb.notes, notePhotos);
-        const audioByNote = RB.mediaByNote(rb.notes, noteAudio);
         // The material a note carries, drawn on the side it sits on, so the author reads the
         // roadbook the way it will be read. A tap opens that note's editor, where it is edited.
         const blockRowsHTML = (n, at, i) => RB.noteBlocks(n, at).filter((b) => b.image || b.text).map((b) => {
@@ -1516,7 +1501,6 @@
                 <div class="note-textcell">
                     <textarea class="note-title field" data-i="${i}" placeholder="${esc(t('Add note text…'))}" autocomplete="off"${readOnly() ? ' readonly' : ''}>${esc(n.text || '')}</textarea>
                     <div class="note-meta">${noteMetaHTML(n)}</div>
-                    ${audioByNote[i] ? `<div class="note-audio">${audioByNote[i].map((a) => `<span class="audio-item"><audio controls preload="none" src="${esc(a.url)}"></audio><button type="button" class="del-badge" data-dela="${a.id}" data-note="${esc(n.num)}" aria-label="${esc(t('Remove'))}">×</button></span>`).join('')}</div>` : ''}
                 </div>
             </div>${blockRowsHTML(n, 'after', i)}<div class="note-edit-slot" id="editSlot${i}"></div>`).join('');
         // road-type accent colour is data-driven → set the CSS variable per row (material blocks skip it)
@@ -1526,7 +1510,7 @@
             // A click inside the live tulip canvas (icon select/drag, junction, its toolbar) must NOT
             // toggle the row shut — the canvas is hosted inside the open row, so its clicks bubble here.
             if (e.target.closest('#canvasWrap')) return;
-            if (!e.target.closest('.note-title') && !e.target.closest('.note-del') && !e.target.closest('.note-audio')) toggleNote(+el.dataset.i);
+            if (!e.target.closest('.note-title') && !e.target.closest('.note-del')) toggleNote(+el.dataset.i);
         });
         $('noteList').querySelectorAll('.note-del').forEach((b) => b.onclick = (e) => { e.stopPropagation(); deleteNoteConfirm(+b.dataset.del); });
         $('noteList').querySelectorAll('.note-block').forEach((el) => el.onclick = (e) => {
@@ -1536,15 +1520,6 @@
         $('noteList').querySelectorAll('.note-photo').forEach((b) => b.onclick = (e) => {
             e.stopPropagation();
             photoToExtra(+b.dataset.photo, (photosByNote[+b.dataset.photo] || [])[0]);
-        });
-        // delete a voice note straight from its note row
-        $('noteList').querySelectorAll('[data-dela]').forEach((b) => b.onclick = async (e) => {
-            e.stopPropagation();
-            if (!(await RBConfirmDanger(t('Delete this voice note?') + '<br><b>' + esc(t('Note')) + ' ' + esc(b.dataset.note) + '</b>'))) return; // name it (#652)
-            const busy = RBBusy(b);
-            const r = await RBApi('audio_delete', { id: +b.dataset.dela });
-            if (!r.ok) { busy.reset(); return toast(r.error || 'Could not delete the voice note.'); } // same rule as the photos (#525)
-            busy.ok(); loadAudio();
         });
         // the title is edited in place — update the model only (no rebuild, so focus is kept)
         $('noteList').querySelectorAll('.note-title').forEach((inp) => {
@@ -2220,30 +2195,26 @@
      * ONCE before running, so a GPX multi-pick never re-prompts per file. */
     const stamp = () => { const d = new Date(), p = RB.pad2; return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds()); };
     // Self-contained .rdbk: every used symbol embedded as a data URI.
-    // A .rdbk is a ZIP container (#162): always roadbook.json (the .rdbk document, its symbols
-    // embedded in it), plus — when the user opts in — the geotagged photos/audio fetched from the
-    // server gallery under photos/ and audio/, with a media.json manifest carrying their coordinates
-    // (so a later import can re-upload them). Media-less exports are just a ZIP with roadbook.json.
+    // A .rdbk is a ZIP container (#162): always roadbook.json (the .rdbk document, its symbols and
+    // its voice notes embedded in it), plus — when the user opts in — the geotagged gallery photos
+    // fetched from the server under photos/, with a media.json manifest carrying their coordinates
+    // (so a later import can re-upload them). Photo-less exports are just a ZIP with roadbook.json.
     async function exportRdbk(includeMedia) {
         stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb); await embedUsed(rb);
         const doc = rdbkDocument();
         if (!doc) return;
         const files = { 'roadbook.json': JSON.stringify(doc) };
         if (includeMedia) {
-            const media = { photos: [], audio: [] };
-            const grab = async (list, dir, bucket) => {
-                for (const it of list) {
-                    try {
-                        const res = await fetch(it.url); if (!res.ok) continue;
-                        const file = dir + '/' + it.url.split('/').pop();
-                        files[file] = new Uint8Array(await res.arrayBuffer());
-                        bucket.push({ file, lat: it.lat, lon: it.lon });
-                    } catch (e) { /* skip a media file that won't fetch — never fail the export */ }
-                }
-            };
-            await grab(notePhotos, 'photos', media.photos);
-            await grab(noteAudio, 'audio', media.audio);
-            if (media.photos.length || media.audio.length) files['media.json'] = JSON.stringify(media);
+            const media = { photos: [] };
+            for (const it of notePhotos) {
+                try {
+                    const res = await fetch(it.url); if (!res.ok) continue;
+                    const file = 'photos/' + it.url.split('/').pop();
+                    files[file] = new Uint8Array(await res.arrayBuffer());
+                    media.photos.push({ file, lat: it.lat, lon: it.lon });
+                } catch (e) { /* skip a photo that won't fetch — never fail the export */ }
+            }
+            if (media.photos.length) files['media.json'] = JSON.stringify(media);
         }
         RBDownload(await RBZip.write(files), RB.slug(rb.meta?.title) + '_' + stamp() + '.rdbk');
         exported = true; clearDraft();
@@ -2307,7 +2278,7 @@
         const m = RBModal(`<h2><i class="fa-solid fa-file-export icon-accent"></i> ${esc(t('Export'))}</h2>
             <div class="choice-grid stack">
                 ${row('rdbk', 'fa-file-zipper', '.rdbk file', 'The whole roadbook, to open again or share')}
-                ${(notePhotos.length || noteAudio.length) ? `<label class="checkbox-row export-opts"><input type="checkbox" data-media checked> ${esc(t('Include photos & audio in the .rdbk'))}</label>` : ''}
+                ${notePhotos.length ? `<label class="checkbox-row export-opts"><input type="checkbox" data-media checked> ${esc(t('Include photos in the .rdbk'))}</label>` : ''}
                 ${row('pdf', 'fa-file-pdf', 'PDF', 'To print or read on paper')}
                 ${row('gpx', 'fa-route', 'GPX', 'For a GPS device or another app')}
                 <div class="export-opts">

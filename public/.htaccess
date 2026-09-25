@@ -3,7 +3,7 @@ ErrorDocument 403 /403.html
 ErrorDocument 404 /404.html
 ErrorDocument 500 /500.html
 
-# Never list directory contents: private media (photos/, audio/) relies on unguessable
+# Never list directory contents: private media (photos/) relies on unguessable
 # filenames, and an autoindex would hand the whole list to anyone (#210).
 Options -Indexes
 
@@ -14,10 +14,7 @@ AddType application/x-roadbook .rdbk
 # MIME type Apache serves it with no Content-Type and stricter mobile engines drop the image.
 AddType image/avif .avif
 
-# Voice notes (recorded WP audio): explicit MIME so every host serves them playable.
-AddType audio/webm .webm
-AddType audio/mp4 .m4a
-AddType audio/ogg .ogg
+# The app's sounds (the bell, the fanfare): explicit MIME so every host serves them playable.
 AddType audio/mpeg .mp3
 
 # Cache policy: the app shell (HTML/JS/CSS/JSON/SVG) must follow deploys

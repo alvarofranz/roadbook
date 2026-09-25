@@ -92,7 +92,7 @@
             'terms.s13h': '13. Owner and contact',
             'terms.s13': 'The Service is offered by <b>Maurizio Andreotti and Álvaro Franz</b>. For information you can write to <a href="mailto:rdbk.admin@gmail.com">rdbk.admin@gmail.com</a>.',
             'seo.contact.title': 'Contact — RDBK.app', 'seo.contact.desc': 'Get in touch with the RDBK.app team — questions, feedback or data requests about our free digital roadbook tools.',
-            'seo.standard.title': 'The .rdbk standard: the open format for digital roadbooks — RDBK.app', 'seo.standard.desc': 'The .rdbk format: the open standard for digital roadbooks, used by off-road riders and organizers worldwide. A ZIP with a self-contained roadbook.json — track, notes, tulips, symbols — plus photos and voice notes. Full spec and FAQ.',
+            'seo.standard.title': 'The .rdbk standard: the open format for digital roadbooks — RDBK.app', 'seo.standard.desc': 'The .rdbk format: the open standard for digital roadbooks, used by off-road riders and organizers worldwide. A ZIP with a self-contained roadbook.json — track, notes, tulips, symbols, voice notes — plus photos. Full spec and FAQ.',
             'seo.roadbooks.title': 'Public Roadbooks — RDBK.app', 'seo.roadbooks.desc': "Browse public roadbooks shared by the community — 4x4, motorbike and bike routes to read, navigate or export.",
             'seo.events.title': 'Events — RDBK.app', 'seo.events.desc': 'Discover roadbook events and rallies: browse upcoming events and their public roadbooks.',
             'seo.feat_editor.title': 'Roadbook Editor — RDBK.app', 'seo.feat_editor.desc': 'Build a digital roadbook from a GPX or record it live — design rally notes, CAP headings, waypoints and icons, then export a self-contained .rdbk.',

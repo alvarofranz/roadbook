@@ -1,14 +1,14 @@
 'use strict';
 /* RBZip — a tiny, dependency-free ZIP codec for the .rdbk container (#162).
  *
- * A .rdbk file is a ZIP holding `roadbook.json` (the .rdbk document) plus optional `media.json`,
- * `photos/…` and `audio/…`. Reading and writing use the platform's native deflate
+ * A .rdbk file is a ZIP holding `roadbook.json` (the .rdbk document, its voice notes inside) plus
+ * optional `media.json` and `photos/…`. Reading and writing use the platform's native deflate
  * (Compression/DecompressionStream 'deflate-raw'); there is no third-party dependency and no
  * build step. The server still stores JSON — the ZIP is only the portable export/import artifact.
  *
  * API: RBZip.read(blob) → { name: Uint8Array } · RBZip.write({ name: bytes|string }) → Blob
  *      RBZip.inspect(file) → what the file holds, unjudged (the validator's input)
- *      RBZip.readBundle(file) → { roadbook, media } (the .rdbk document + its bundled photos/audio)
+ *      RBZip.readBundle(file) → { roadbook, media } (the .rdbk document + its bundled photos)
  *      RBZip.readRdbk(file) → the .rdbk document alone
  *      (all accept the ZIP and a bare roadbook.json)
  *      RBZip.isZip(bytes4) · RBZip.textOf(bytes) */
@@ -122,8 +122,7 @@
     // MIME from a filename extension, so re-uploaded media carries a type the server recognises.
     function mimeOf(name) {
         const ext = (String(name).split('.').pop() || '').toLowerCase();
-        return ({ avif: 'image/avif', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp',
-            webm: 'audio/webm', ogg: 'audio/ogg', m4a: 'audio/mp4', mp3: 'audio/mpeg', wav: 'audio/wav' })[ext] || 'application/octet-stream';
+        return ({ avif: 'image/avif', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp' })[ext] || 'application/octet-stream';
     }
 
     /* ---- what a .rdbk file holds, before anyone judges it ----
@@ -146,19 +145,18 @@
         return out;
     }
 
-    /* ---- open a .rdbk with its bundled media: { roadbook, media:[{type,name,lat,lon,blob}] } ----
-       A bare roadbook.json yields no media. media.json supplies each file's geotag. */
+    /* ---- open a .rdbk with its bundled photos: { roadbook, media:[{type,name,lat,lon,blob}] } ----
+       A bare roadbook.json yields none. media.json supplies each photo's geotag. */
     async function readBundle(file) {
         const f = await inspect(file);
         if (!f.doc) throw new Error(f.docError);
         const manifest = f.manifest || {};
-        const coordOf = (path) => (manifest.photos || []).concat(manifest.audio || []).find((x) => x.file === path) || {};
+        const coordOf = (path) => (manifest.photos || []).find((x) => x.file === path) || {};
         const media = [];
         for (const path of f.names) {
-            const type = path.startsWith('photos/') ? 'photo' : path.startsWith('audio/') ? 'audio' : null;
-            if (!type) continue;
+            if (!path.startsWith('photos/') || path.endsWith('/')) continue;
             const c = coordOf(path);
-            media.push({ type, name: path.split('/').pop(), lat: c.lat != null ? c.lat : null, lon: c.lon != null ? c.lon : null, blob: new Blob([f.files[path]], { type: mimeOf(path) }) });
+            media.push({ type: 'photo', name: path.split('/').pop(), lat: c.lat != null ? c.lat : null, lon: c.lon != null ? c.lon : null, blob: new Blob([f.files[path]], { type: mimeOf(path) }) });
         }
         return { roadbook: f.doc, media };
     }

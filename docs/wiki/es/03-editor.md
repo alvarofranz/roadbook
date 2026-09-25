@@ -2,7 +2,7 @@
 
 El **Editor** es el centro de creación: aquí transformas una trazada en bruto (o una hoja en blanco) en un roadbook completo con notas, CAP, danger, tipos de carretera, iconos, viñetas.
 
-> **Funciona offline** para edición pura. Se necesita conexión para: login, cargar/guardar en el perfil, subida de fotos/audio, importar challenge públicas, export PDF/GPX (usa librerías lazy-loaded).
+> **Funciona offline** para edición pura. Se necesita conexión para: login, cargar/guardar en el perfil, subida de fotos, importar challenge públicas, export PDF/GPX (usa librerías lazy-loaded).
 
 ---
 
@@ -190,12 +190,6 @@ Tap pin / miniatura → visor a pantalla completa (cubre solo el mapa, **no** el
 
 ---
 
-## Notas de voz — reproductor
-
-Las notas de voz ya grabadas se guardan server-side (`roadbook_audio`, `audio_list`/`audio_delete`). Cada una aparece como **reproductor de audio** en la fila de nota más cercana (≤80m), con una **×** para eliminarla (la confirmación nombra la nota).
-
----
-
 ## Export & Save to profile
 
 Botón **Export** → pop-up con todos los formatos. **Save** (guardado de perfil) separado. Cada export cierra pop-up, confirma **una vez** los cortes abiertos, recalcula métricas.
@@ -204,7 +198,7 @@ Botón **Export** → pop-up con todos los formatos. **Save** (guardado de perfi
 
 | Formato | Función | Output |
 |---------|----------|--------|
-| **.rdbk** | `exportRdbk(includeMedia)` | ZIP: `roadbook.json` auto-contenido escrito por `RB.writeRoadbook` y comprobado por `RB.validateRoadbook` (`embedUsed` embebe los símbolos usados, poda los estándar no usados) + opcional `photos/`/`audio/`/`media.json` |
+| **.rdbk** | `exportRdbk(includeMedia)` | ZIP: `roadbook.json` auto-contenido escrito por `RB.writeRoadbook` y comprobado por `RB.validateRoadbook` (`embedUsed` embebe los símbolos usados, poda los estándar no usados) + opcional `photos/` + `media.json` |
 | **PDF** | `exportPdf` | A4 vía `RBPdf.generate` (jsPDF lazy, `rb-pdf.js`) |
 | **GPX** | `exportCustomGpx` | Checkbox componibles (Trazada / Waypoint / iconos Garmin / iconos OSMAnd / archivo OpenRally separado) |
 | **OpenRally** | `exportOpenRally` | `RB.openRallyDocument` → `…_OR.gpx` (GPX 1.1 + namespace `openrally:`) |

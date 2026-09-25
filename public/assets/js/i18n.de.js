@@ -23,7 +23,7 @@
             'about.thanks': 'Besonderer Dank',
             'about.thanks.massimo': 'Offroad-Navigator und Event-Organisator — er formte die <b>Roadbook System</b>-Suite und ihr Credo (<i>Logica, Semplice, Utile</i>), den Ausgangspunkt für RDBK.app.',
             'seo.contact.title': 'Kontakt — RDBK.app', 'seo.contact.desc': 'Nimm Kontakt mit dem RDBK.app-Team auf — Fragen, Feedback oder Datenanfragen zu unseren kostenlosen Werkzeugen für digitale Roadbooks.',
-            'seo.standard.title': 'Der .rdbk-Standard: das offene Format für digitale Roadbooks — RDBK.app', 'seo.standard.desc': 'Das .rdbk-Format: der offene Standard für digitale Roadbooks, weltweit genutzt von Offroad-Fahrern und Veranstaltern. Ein ZIP mit einer eigenständigen roadbook.json — Track, Notizen, Vignetten, Symbole — plus Fotos und Sprachnotizen. Vollständige Spezifikation und FAQ.',
+            'seo.standard.title': 'Der .rdbk-Standard: das offene Format für digitale Roadbooks — RDBK.app', 'seo.standard.desc': 'Das .rdbk-Format: der offene Standard für digitale Roadbooks, weltweit genutzt von Offroad-Fahrern und Veranstaltern. Ein ZIP mit einer eigenständigen roadbook.json — Track, Notizen, Vignetten, Symbole, Sprachnotizen — plus Fotos. Vollständige Spezifikation und FAQ.',
             'seo.roadbooks.title': 'Öffentliche Roadbooks — RDBK.app', 'seo.roadbooks.desc': "Entdecke öffentliche Roadbooks der Community – Routen für 4x4, Motorrad und Fahrrad zum Lesen, Navigieren oder Exportieren.",
             'seo.events.title': 'Events — RDBK.app', 'seo.events.desc': 'Entdecke Roadbook-Events und Rallyes: durchstöbere kommende Events und ihre öffentlichen Roadbooks.',
             'seo.feat_editor.title': 'Roadbook Editor — RDBK.app', 'seo.feat_editor.desc': 'Erstelle ein digitales Roadbook aus einer GPX oder nimm es live auf — gestalte Rally-Notizen, CAP, Wegpunkte und Icons und exportiere ein eigenständiges .rdbk.',
@@ -140,14 +140,14 @@
             'Draw on the map': 'Auf der Karte zeichnen', 
             
             
-            'Export': 'Exportieren', '.rdbk file': '.rdbk-Datei', 'Include photos & audio in the .rdbk': 'Fotos & Audio in die .rdbk aufnehmen', 'Photos & audio': 'Fotos & Audio', 'This roadbook includes photos or voice notes. They stay hidden until you save it to your profile.': 'Dieses Roadbook enthält Fotos oder Sprachnotizen. Sie bleiben verborgen, bis du es in deinem Profil speicherst.', 'Track line': 'Tracklinie', 'Waypoints (notes)': 'Wegpunkte (Notizen)', 'Garmin icons': 'Garmin-Icons', 'OSMAnd icons': 'OSMAnd-Icons', 
+            'Export': 'Exportieren', '.rdbk file': '.rdbk-Datei', 'Track line': 'Tracklinie', 'Waypoints (notes)': 'Wegpunkte (Notizen)', 'Garmin icons': 'Garmin-Icons', 'OSMAnd icons': 'OSMAnd-Icons', 
             'Settings': 'Einstellungen', 
             'Identity': 'Identität', 'Visibility & map': 'Sichtbarkeit & Karte',
             'Map access from player': 'Kartenzugriff aus dem Reader', 'Allow the map in the Reader': 'Karte im Reader erlauben',
             'Route': 'Route', 'Reverse the whole route? Start and finish swap, and every vignette is recomputed.': 'Gesamte Route umkehren? Start und Ziel tauschen und alle Vignetten werden neu berechnet.',
             'Map style': 'Kartenstil', 'Page': 'Seite', 'of': 'von', 
             'No photos yet.': 'Noch keine Fotos.', 'No icons.': 'Keine Icons.',
-            'Delete this voice note?': 'Diese Sprachnotiz löschen?',
+            
             
             
             
@@ -181,7 +181,7 @@
             'why.symbols': '<b>Symbole zuerst.</b> Jede Notiz kann positionierte, drehbare und skalierbare Piktogramme sowie farbige Kreuzungsvektoren tragen — nicht nur eine Textzeile.',
             'Container (the file)': 'Container (die Datei)',
             
-            'container.media': 'Fotos und Sprachnotizen sind <b>optional</b>: sie reisen nur mit, wenn der Export sie einschließt. Der MIME-Typ der Datei bleibt <code>application/x-roadbook</code>.',
+            'container.media': 'Fotos sind <b>optional</b>: sie reisen nur mit, wenn der Export sie einschließt. Der MIME-Typ der Datei bleibt <code>application/x-roadbook</code>.',
             'Document structure': 'Dokumentstruktur',
             
             
@@ -373,9 +373,9 @@
             'priv.account.3': 'Du kannst dich optional <b>mit Google oder mit Apple anmelden</b>. Der Anbieter übermittelt deinen Namen, deine E-Mail-Adresse und eine Konto-Kennung, die wir nur nutzen, um dein RDBK.app-Konto zu erstellen oder dich anzumelden — dein Passwort erhalten wir nie. Bei „Mit Apple anmelden“ kannst du <b>E-Mail-Adresse verbergen</b> wählen; dann sehen wir nur Apples private Weiterleitungsadresse, niemals deine echte. Die Anmeldung mit E-Mail/Passwort bleibt verfügbar.',
             'priv.account.4': 'Wenn du <b>dein Konto löschst</b>, werden deine Profildaten (Name, E-Mail, Passwort, Avatar) sofort entfernt. Deine Roadbooks — mit Fotos und Sprachnotizen — werden mit deinem früheren Benutzernamen umbenannt, in ein generisches “deleted user”-Profil verschoben und <b>30 Tage</b> in dessen Papierkorb aufbewahrt (melde dich in diesem Zeitraum, falls du versehentlich gelöscht hast); danach werden sie endgültig gelöscht.',
             'priv.h.rb': 'Roadbooks und Fotos (nur wenn du sie speicherst)',
-            'priv.rb.1': 'Wenn du ein Roadbook in deinem Profil speicherst, werden seine Daten und alle hinzugefügten geotaggten Fotos auf unserem Server gespeichert, damit du geräteübergreifend darauf zugreifen kannst.',
+            'priv.rb.1': 'Wenn du ein Roadbook in deinem Profil speicherst, werden seine Daten (samt Sprachnotizen) und alle hinzugefügten geotaggten Fotos auf unserem Server gespeichert, damit du geräteübergreifend darauf zugreifen kannst.',
             'priv.rb.2': 'Jedes Roadbook ist <b>standardmäßig privat</b>; es wird für andere erst sichtbar, wenn du es als öffentliches Roadbook veröffentlichst.',
-            'priv.rb.3': 'Beim <b>Export einer <code>.rdbk</code>-Datei</b> sind Fotos und Sprachnotizen nur enthalten, wenn du die Option <b>„Fotos & Audio einschließen“</b> aktivierst; sonst enthält die Datei nur das Roadbook. Eine mit Medien exportierte Datei trägt sie auf deinem Gerät — du entscheidest, was mitreist.',
+            'priv.rb.3': 'Beim <b>Export einer <code>.rdbk</code>-Datei</b> reisen die Sprachnotizen immer darin mit, als Teil ihrer Notizen; Fotos sind nur enthalten, wenn du die Option <b>„Fotos in die .rdbk aufnehmen“</b> aktivierst. Die exportierte Datei bleibt auf deinem Gerät — du entscheidest, was mitreist.',
             'priv.h.camera': 'Kamera und Fotos',
             'priv.camera': 'Die Kamera wird nur verwendet, wenn du ein Foto zu einem Roadbook hinzufügen möchtest. Angehängte Fotos werden in dein Konto hochgeladen; Fotos werden niemals automatisch erfasst.',
             'priv.h.not': 'Was wir NICHT tun',
@@ -882,7 +882,7 @@ Object.assign(window.RBi18nLangs.de, {
 /* a refused media delete says why (#525) */
 Object.assign(window.RBi18nLangs.de, {
     'Could not delete the photo.': 'Das Foto konnte nicht gelöscht werden.',
-    'Could not delete the voice note.': 'Die Sprachnotiz konnte nicht gelöscht werden.',
+    
 });
 
 /* events: registration + desk activation messages (#573 · #576 · #579 · #587 · #604) */
@@ -1823,7 +1823,7 @@ Object.assign(window.RBi18nLangs.de, {
     "lead.adoption": "<b>Das Referenzformat für digitale Roadbooks.</b> Da es in der Branche keinen offiziellen Standard gibt, ist <code>.rdbk</code> zum offenen Format geworden, das Fahrer, Clubs und Veranstalter auf der ganzen Welt kennen und bevorzugen — mit 4×4, Motorrad und Fahrrad.",
     "Frequently asked questions": "Häufige Fragen",
     "faq.q1": "Was ist eine .rdbk-Datei?",
-    "faq.a1": "Eine <code>.rdbk</code>-Datei ist ein digitales Roadbook: ein ZIP-Container mit einer eigenständigen <code>roadbook.json</code> — der GPS-Track, die nummerierten Notizen mit ihren Distanzen, CAP-Kurse, Vignetten und die verwendeten Symbole — dazu optional georeferenzierte Fotos und Sprachnotizen. Es ist der offene Standard für digitale Roadbooks.",
+    "faq.a1": "Eine <code>.rdbk</code>-Datei ist ein digitales Roadbook: ein ZIP-Container mit einer eigenständigen <code>roadbook.json</code> — der GPS-Track, die nummerierten Notizen mit ihren Distanzen, CAP-Kurse, Vignetten, Sprachnotizen und die verwendeten Symbole — dazu optional georeferenzierte Fotos. Es ist der offene Standard für digitale Roadbooks.",
     "faq.q2": "Wie öffne ich eine .rdbk-Datei?",
     "faq.a2": "Öffne sie im kostenlosen <a href=\"../reader/\">RDBK.app Reader</a> — im Browser, als installierte Web-App oder in den iOS- und Android-Apps — und navigiere sie mit Live-GPS, auch offline. Da es ein ZIP mit JSON darin ist, kann jeder Entwickler es mit wenigen Codezeilen in jeder Sprache lesen.",
     "faq.q3": "Ist .rdbk kostenlos und offen?",
@@ -1975,7 +1975,7 @@ Object.assign(window.RBi18nLangs.de, {
     "Required. Box size in reference units (square).": "Pflicht. Boxgröße in Referenzeinheiten (quadratisch).",
     "Rotation, degrees clockwise. Default 0.": "Drehung, Grad im Uhrzeigersinn. Standard 0.",
     "Mirrored left to right. Default false.": "Von links nach rechts gespiegelt. Standard false.",
-    "s1.container": "Eine <code>.rdbk</code>-Datei ist ein <b>ZIP</b>-Container. Darin enthält <code>roadbook.json</code> das Roadbook — das unten beschriebene Dokument, jedes gezeichnete Symbol eingebettet — neben optionalen Medien:",
+    "s1.container": "Eine <code>.rdbk</code>-Datei ist ein <b>ZIP</b>-Container. Darin enthält <code>roadbook.json</code> das Roadbook — das unten beschriebene Dokument, jedes gezeichnete Symbol und jede Sprachnotiz eingebettet — neben optionalen Fotos:",
     "s1.structure": "<code>roadbook.json</code> ist ein einziges JSON-Objekt. Es enthält <b>was der Autor entschieden hat und nichts, was sich berechnen lässt</b>: jede Distanz, Richtung und Anzahl leitet der Leser aus dem Track ab, sodass eine Datei sich nie widerspricht.",
     "s1.units": "Koordinaten sind WGS-84-Dezimalgrad mit höchstens 6 Nachkommastellen. <b>Distanzen sind ganze Meter.</b> Richtungen sind Grad im Uhrzeigersinn ab geografisch Nord (0–359). Ein Wert auf seinem Standard — ein leerer Text, die Piste, keine Drehung — <b>wird weggelassen</b>: es gibt nur eine Art, jedes Ding zu schreiben.",
     "s1.meta.logo": "Optional. Das Bild des Roadbooks als <code>data:</code>-URI, eingebettet wie die Symbole.",
@@ -2004,7 +2004,7 @@ Object.assign(window.RBi18nLangs.de, {
     "s1.junctions.h2": "Kreuzungsvektoren (<code>junctions</code>)",
     "s1.junctions.intro": "Eine Notiz kann die anderen Straßen ihrer Kreuzung zeichnen: Vektoren auf derselben 230 × 162-Box, von <code>from</code> nach <code>to</code>, jeder mit seinem <code>road_type</code> (Standard <code>2</code>) und dem Strich, den er ergibt.",
     "s1.compatibility": "Ein optionales Objekt, auf oberster Ebene und an einer Notiz, mit <b>einem Block pro anderem Format</b>, nach ihm benannt — <code>openrally</code>, <code>gpx</code>. Es bewahrt, was dieses Format sagte und wofür .rdbk kein Feld hat, sodass der Rückweg nichts verliert. Ein Leser, der einen Block nicht kennt, ignoriert ihn; ein Schreiber MUSS ihn behalten.",
-    "s1.media": "Wo jede beigefügte Datei aufgenommen wurde: <code>{ \"photos\": [ { \"file\": \"photos/…\", \"lat\"?, \"lon\"? } ], \"audio\": [ … ] }</code>. Jedes <code>file</code> ist ein Eintrag des Containers.",
+    "s1.media": "Wo jedes beigefügte Foto aufgenommen wurde: <code>{ \"photos\": [ { \"file\": \"photos/…\", \"lat\"?, \"lon\"? } ] }</code>. Jedes <code>file</code> ist ein Eintrag des Containers.",
     "s1.conformance.reader": "Ein konformer <b>Leser</b> MUSS eine Datei ablehnen, deren <code>rdbk_version</code> er nicht kennt, die <a href=\"#derived\">abgeleiteten Werte</a> so berechnen, wie diese Seite sie definiert, und jede Straße mit ihrem Strich zeichnen.",
     "s1.conformance.writer": "Ein konformer <b>Schreiber</b> MUSS jedes Symbol einbetten, das seine Notizen nutzen, DARF KEINEN abgeleiteten Wert schreiben und SOLLTE jeden Wert auf seinem Standard weglassen.",
     "s1.conformance.unknown": "Einen unbekannten Schlüssel ignoriert ein Leser; <code>compatibility</code>-Blöcke bleiben bei einem Hin und Zurück erhalten.",
@@ -2104,4 +2104,11 @@ Object.assign(window.RBi18nLangs.de, {
     "A photo or a voice note lands where you pressed the button, and the check comes once it is saved. A voice note needs at least 2 seconds.": "Ein Foto oder eine Sprachnotiz landet dort, wo du den Knopf gedrückt hast, und das Häkchen kommt, sobald sie gespeichert ist. Eine Sprachnotiz braucht mindestens 2 Sekunden.",
     "Open a .gpx or a .rdbk straight from Files, a download or a chat: a GPX opens in the Editor, a roadbook in the Reader. The app’s file picker shows every file.": "Öffne eine .gpx- oder .rdbk-Datei direkt aus Dateien, einem Download oder einem Chat: Ein GPX öffnet sich im Editor, ein Roadbook im Reader. Die Dateiauswahl der App zeigt alle Dateien.",
     "Admins can start the Recorder without GPS, and the event page fits a phone.": "Admins können den Recorder ohne GPS starten, und die Eventseite passt aufs Handy.",
+});
+
+/* Photos bundled in a .rdbk · the 60 MB roadbook */
+Object.assign(window.RBi18nLangs.de, {
+    "This roadbook includes photos. They stay hidden until you save it to your profile.": "Dieses Roadbook enthält Fotos. Sie bleiben verborgen, bis du es in deinem Profil speicherst.",
+    "Include photos in the .rdbk": "Fotos in die .rdbk aufnehmen",
+    "This roadbook is too large (60 MB at most).": "Dieses Roadbook ist zu groß (höchstens 60 MB).",
 });

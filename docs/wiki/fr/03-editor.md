@@ -2,7 +2,7 @@
 
 L'**Editor** est le centre de création : ici vous transformez une trace brute (ou une page blanche) en un roadbook complet avec notes, CAP, danger, types de route, icônes, vignettes.
 
-> **Fonctionne hors ligne** pour l'édition pure. Une connexion est nécessaire pour : la connexion, charger/sauvegarder sur le profil, envoyer photos/audio, importer des challenges publics, export PDF/GPX (utilise des bibliothèques lazy-loaded).
+> **Fonctionne hors ligne** pour l'édition pure. Une connexion est nécessaire pour : la connexion, charger/sauvegarder sur le profil, envoyer des photos, importer des challenges publics, export PDF/GPX (utilise des bibliothèques lazy-loaded).
 
 ---
 
@@ -190,12 +190,6 @@ Tap sur épingle / miniature → visionneuse plein écran (ne couvre que la cart
 
 ---
 
-## Notes vocales — lecteur
-
-Les notes vocales déjà enregistrées sont stockées côté serveur (`roadbook_audio`, `audio_list`/`audio_delete`). Chacune apparaît comme **lecteur audio** sur la ligne de note la plus proche (≤80m), avec une **×** pour la supprimer (la confirmation nomme la note).
-
----
-
 ## Export & Save to profile
 
 Bouton **Export** → pop-up avec tous les formats. **Save** (sauvegarde profil) séparé. Chaque export ferme le pop-up, confirme **une fois** les coupes ouvertes, recalcule les métriques.
@@ -204,7 +198,7 @@ Bouton **Export** → pop-up avec tous les formats. **Save** (sauvegarde profil)
 
 | Format | Fonction | Sortie |
 |---------|----------|--------|
-| **.rdbk** | `exportRdbk(includeMedia)` | ZIP : `roadbook.json` auto-contenu écrit par `RB.writeRoadbook` et vérifié par `RB.validateRoadbook` (`embedUsed` embarque les symboles utilisés, élimine les standard inutilisés) + optionnel `photos/`/`audio/`/`media.json` |
+| **.rdbk** | `exportRdbk(includeMedia)` | ZIP : `roadbook.json` auto-contenu écrit par `RB.writeRoadbook` et vérifié par `RB.validateRoadbook` (`embedUsed` embarque les symboles utilisés, élimine les standard inutilisés) + optionnel `photos/` + `media.json` |
 | **PDF** | `exportPdf` | A4 via `RBPdf.generate` (jsPDF lazy, `rb-pdf.js`) |
 | **GPX** | `exportCustomGpx` | Cases composables (Trace / Waypoint / icônes Garmin / icônes OSMAnd / fichier OpenRally séparé) |
 | **OpenRally** | `exportOpenRally` | `RB.openRallyDocument` → `…_OR.gpx` (GPX 1.1 + namespace `openrally:`) |

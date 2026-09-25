@@ -28,7 +28,7 @@ RBUpload(...)          ──POST──▶ upload.php          ─────�
 - **Un unico front controller per le action JSON:** [`public/api/index.php`](../public/api/index.php)
   riceve tutte le chiamate `RBApi(...)` e fa il dispatch su `$action`.
 - **Un endpoint separato per i file binari:** [`public/api/upload.php`](../public/api/upload.php)
-  riceve i `multipart/form-data` (avatar, logo evento, foto galleria, cover, note vocali), perché
+  riceve i `multipart/form-data` (avatar, logo evento, foto galleria, cover, immagine della run), perché
   il router JSON parla solo JSON.
 - Entrambi gli entry point caricano per prima cosa [`app/bootstrap.php`](../app/bootstrap.php),
   che costruisce `$CFG` dall'`.env`, apre la sessione e include `db.php`, `mail.php`, `auth.php`,
@@ -64,7 +64,7 @@ switch ci sono i guard di metodo e di origine.
 ### Le action dell'API
 
 Le action sono definite in `app/auth.php` (account), `app/admin.php` + `app/settings.php` (admin),
-`app/roadbooks.php` (roadbook/foto/audio/pubblici), `app/events.php` (eventi), `app/runs.php` (run,
+`app/roadbooks.php` (roadbook/foto/pubblici), `app/events.php` (eventi), `app/runs.php` (run,
 profili, classifiche), `app/comments.php` (commenti) e `app/contact.php` (modulo di contatto). Colonna **Auth**: *nessuna* = anonima · *opzionale*
 = `current_user()` (funziona da anonimo, eleva i permessi se loggato) · *richiesta* =
 `require_user()` (401 senza sessione né Bearer token) · *admin* = `require_admin()` ·
@@ -170,7 +170,7 @@ proprio roadbook. Il cron (slot 6) cancella le lette dopo 90 giorni, tutte dopo 
 | `live_stop` | Fine della run: l'ultima posizione resta, segnata come finita | richiesta |
 | `live_list` | La mappa degli organizzatori (`require_event_manage`): ogni posizione con `age_s` dall'orologio del server; con `tracks` anche il contorno dei roadbook dell'evento | richiesta |
 
-**Roadbook, foto, audio, pubblici** (`roadbooks.php`)
+**Roadbook, foto, pubblici** (`roadbooks.php`)
 
 | Action | Cosa fa | Auth |
 |--------|---------|:----:|
@@ -178,20 +178,19 @@ proprio roadbook. Il cron (slot 6) cancella le lette dopo 90 giorni, tutte dopo 
 | `rb_coedit_list` | Elenca i roadbook altrui che puoi co-editare via un tuo evento (#123) | richiesta |
 | `rb_get` | Carica un roadbook che puoi editare (proprietario **o** co-editor di evento); restituisce `status`/`reusable`/`is_owner`/`owner` e, se richiesto (`lock`), acquisisce il soft lock | richiesta |
 | `rb_lock_refresh`/`rb_lock_release`/`rb_lock_force` | Heartbeat / rilascio / presa forzata del soft lock (#154) | richiesta |
-| `rb_draft` | Crea una bozza vuota (intitolata col nome, #148) per agganciarvi foto/audio in registrazione | richiesta |
-| `rb_save` | Salva/aggiorna un roadbook (`status` draft/ready/public + `reusable` + `vehicles` car/moto/bike, #713; solo il proprietario ne cambia pubblicazione e veicoli — un client che non invia `vehicles` lascia quelli salvati; rifiuta 409 se un altro tiene il lock) | richiesta |
+| `rb_draft` | Crea una bozza vuota (intitolata col nome, #148) per agganciarvi le foto in registrazione | richiesta |
+| `rb_save` | Salva/aggiorna un roadbook (`status` draft/ready/public + `reusable` + `vehicles` car/moto/bike, #713; solo il proprietario ne cambia pubblicazione e veicoli — un client che non invia `vehicles` lascia quelli salvati; rifiuta 409 se un altro tiene il lock, 413 un documento oltre `RB_MAX_BYTES` = 60 MB) | richiesta |
 | `rb_status` | Cambia solo lo `status` di pubblicazione (proprietario) | richiesta |
-| `rb_duplicate` | Duplica un proprio roadbook (file + riga + galleria **+ audio**), in **una transazione**; la copia parte `draft` | richiesta |
+| `rb_duplicate` | Duplica un proprio roadbook (file — note vocali comprese — + riga + galleria), in **una transazione**; la copia parte `draft` | richiesta |
 | `rb_delete` | **Cestina** un proprio roadbook (soft-delete → `status='deleted'`, #187): sparisce dalle viste utente, i file restano 30gg per il ripristino (proprio, #238, o admin) | richiesta |
 | `ph_list` / `ph_delete` / `ph_move` | Elenca / elimina / sposta il geotag di una foto — tutte per chi può **editare** il roadbook (proprietario o co-editor di evento, `rb_require_edit`): la galleria non è mai pubblica (#316) | richiesta |
-| `audio_list` / `audio_delete` | Elenca / elimina una nota vocale — stesso gate | richiesta |
 | `public_list` | Galleria pubblica: ultimi 60 `status='public'`, ognuno con i suoi `vehicles` per il filtro della galleria (#713) | nessuna |
 
 Ogni lista che disegna una card di roadbook (`public_list`, `profile_get`, `event_get`) seleziona le
 stesse colonne con **`RB_CARD_SQL`** e le modella con **`rb_card_fields`** (`roadbooks.php`): il
 `thumb` (la cover, altrimenti la prima foto) e `completions`, le run completate, pubbliche o
 private — un numero non nomina nessuno (#868).
-| `public_get` | Carica via slug un roadbook `public` (o proprio, o **`ready` per i partecipanti/organizzatori** del suo evento, #25); include la sola `cover` (mai galleria né audio, #316) + l'autore (`username` e `avatar`, mai il nome reale) | opzionale |
+| `public_get` | Carica via slug un roadbook `public` (o proprio, o **`ready` per i partecipanti/organizzatori** del suo evento, #25); include la sola `cover` (mai la galleria, #316) + l'autore (`username` e `avatar`, mai il nome reale) | opzionale |
 
 `current_user()` — il payload restituito da `config` e da `login` — include anche le preferenze
 utente: `ui_lang` (lingua UI scelta), la posizione mappa
@@ -218,7 +217,7 @@ se manca) e costruisce l'array `$CFG`:
 | `app_secret` | `APP_SECRET` | pepper per l'hashing dei token |
 | `turnstile_site`, `turnstile_secret` | `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET` | Cloudflare Turnstile |
 | `storage` | — (`<root>/storage/users`) | file `.rdbk` privati per-utente |
-| `avatars_dir`, `photos_dir`, `audio_dir`, `event_logos_dir` | — (`public/avatars`, `public/photos`, `public/audio`, `public/event-logos`) | immagini, note vocali e loghi evento serviti via web |
+| `avatars_dir`, `photos_dir`, `event_logos_dir`, `run_cards_dir` | — (`public/avatars`, `public/photos`, `public/event-logos`, `public/run-cards`) | immagini servite via web |
 
 `bootstrap.php` definisce anche la costante **`DEFAULT_QUOTA_BYTES`** (50 MB, #99): la quota disco
 di default per utente, sovrascrivibile per singolo utente da un admin (`users.quota_bytes`).
@@ -352,7 +351,12 @@ solo i rate limit. Il web lo richiede come sempre.
 roadbook* è un file su disco in `storage/users/<user_id>/<id>.rdbk`
 ([`rb_dir`](../app/roadbooks.php), `mkdir 0700`), fuori dalla web root e servito **solo**
 attraverso questi endpoint autenticati. Lo storage lato server resta **JSON puro**: il
-contenitore ZIP `.rdbk` (con foto/audio) è solo l'artefatto di export/import client-side.
+contenitore ZIP `.rdbk` (con le foto) è solo l'artefatto di export/import client-side. Le note
+vocali stanno **dentro** il documento (blocchi `voice`, audio in data URI, #992): viaggiano, si
+proteggono e contano nella quota come parte di quel file. Un documento è al massimo
+**`RB_MAX_BYTES` = 60 MB** (`bootstrap.php`): `rb_save` rifiuta uno più grande con `413` *This
+roadbook is too large (60 MB at most).*, e `json_in` rifiuta già dal `Content-Length` un corpo
+che il pool FPM (`post_max_size` 64M) consegnerebbe vuoto.
 
 ### Lo stato di pubblicazione (`status`, non più `is_public`)
 Dalla migrazione 015 (#96) il ciclo di vita di un roadbook è un enum **`status`** =
@@ -400,15 +404,16 @@ Ogni roadbook riceve sempre uno **slug** (`unique_slug`): base slugificata dal t
 con suffisso `-2`, `-3`… ed unico a livello DB (`uq_slug`). Lo slug esiste anche per i privati (la
 pagina di vista funziona pure su privato per il proprietario).
 
-### Bozza per foto/audio live (`rb_draft`)
+### Bozza per le foto live (`rb_draft`)
 `rb_draft` crea una riga vuota (`note_count = 0`, `status='draft'`, `filename = 'pending'`)
 all'avvio della registrazione, **intitolata col nome scelto** (#148) invece del vecchio segnaposto
-"Recording…", così foto e note vocali scattate dal vivo si agganciano subito a un `roadbook_id`. Le
+"Recording…", così le foto scattate dal vivo si agganciano subito a un `roadbook_id` (le note vocali aspettano sul
+dispositivo ed entrano nel documento al salvataggio). Le
 bozze mai finite vengono ripulite dal cron round-robin (`cron/cron.php` → `cleanup-drafts.php`).
 
 ### Lista, lettura, duplicazione, eliminazione
 - `rb_list`: metadati dei propri roadbook ordinati per `updated_at`, ognuno con `total_bytes`
-  (file `.rdbk` + foto + audio). `rb_coedit_list`: i roadbook **altrui** (non cestinati) che puoi
+  (file `.rdbk`, note vocali comprese, + foto). `rb_coedit_list`: i roadbook **altrui** (non cestinati) che puoi
   co-editare tramite un tuo evento (ognuno nomina l'evento di provenienza).
 - `rb_get`, `public_get` e `admin_rb_get` leggono il payload con lo stesso `rb_read_payload` (path
   nello storage del proprietario, decodifica): il documento `.rdbk` salvato, o `null` per una bozza
@@ -418,9 +423,9 @@ bozze mai finite vengono ripulite dal cron round-robin (`cron/cron.php` → `cle
   UI di co-editing) e, **se il chiamante lo chiede** (`lock`), acquisisce il soft lock — l'Editor lo
   chiede, il Reader no. Per una bozza senza file `roadbook` è `null`, e l'Editor parte da
   `RB.newRoadbook(title, [], [])` per disegnarne la rotta.
-- `rb_duplicate`: controlla prima la quota (`rb_assert_quota` con la dimensione di file + foto +
-  audio), poi in **una singola transazione** copia file `.rdbk`, riga DB, intera galleria foto
-  **e le note vocali** (file + righe) in un nuovo roadbook; un errore a metà fa rollback (niente
+- `rb_duplicate`: controlla prima la quota (`rb_assert_quota` con la dimensione di file + foto),
+  poi in **una singola transazione** copia file `.rdbk` (note vocali comprese), riga DB e intera
+  galleria foto in un nuovo roadbook; un errore a metà fa rollback (niente
   copie parziali). La copia parte `draft`, con titolo "… (copy)" e slug proprio.
 - `rb_delete`: sposta nel cestino (`status='deleted'`, #187) invece di cancellare; il purge
   (riga prima, poi file) lo fa il cron o `admin_rb_purge`.
@@ -430,8 +435,8 @@ bozze mai finite vengono ripulite dal cron round-robin (`cron/cron.php` → `cle
   thumbnail (prima foto della galleria, che è la cover a `sort -1` se presente).
 - `public_get`: carica un roadbook via **slug**. È servito se `public`, **o** al proprietario, **o**
   — se `ready` — ai **partecipanti/organizzatori dell'evento** a cui è associato (#25,
-  `event_grants_read`); altrimenti `403`. Include il `.rdbk`, la sola `cover` (galleria e note
-  vocali sono materiale di lavoro dell'autore, mai esposte, #316) e i dati pubblici dell'autore. È la base della pagina challenge / vista pubblica.
+  `event_grants_read`); altrimenti `403`. Include il `.rdbk`, la sola `cover` (la galleria è
+  materiale di lavoro dell'autore, mai esposta, #316) e i dati pubblici dell'autore. È la base della pagina challenge / vista pubblica.
 
 ---
 
@@ -440,8 +445,8 @@ bozze mai finite vengono ripulite dal cron round-robin (`cron/cron.php` → `cle
 ### upload.php — i cinque tipi di upload
 [`upload.php`](../public/api/upload.php) richiede sempre un utente loggato (`require_user()`) e
 applica lo stesso `require_same_origin()` del router. Accetta `multipart` con un campo file
-(`photo` per le immagini, `audio` per le note vocali; max **12 MB**, deve essere un vero
-`is_uploaded_file`). Gli upload che consumano spazio (foto/audio) verificano prima la **quota
+(`photo`; max **12 MB**, deve essere un vero `is_uploaded_file`). Gli upload che consumano spazio
+(le foto) verificano prima la **quota
 disco del proprietario del roadbook** (`rb_assert_quota`): superata, rispondono **`413`**.
 
 - **`type=avatar`** → AVIF quadrato 256px in `public/avatars/<user_id>.avif`; aggiorna
@@ -464,24 +469,17 @@ disco del proprietario del roadbook** (`rb_assert_quota`): superata, rispondono 
   casuale come ogni foto (#206: non enumerabile — le mappe dei roadbook privati non devono
   essere indovinabili). Rigenerata ad ogni save (anche di un co-editor); la rigenerazione
   elimina il file precedente. Accesso via `rb_require_edit`.
-- **`type=audio` + `roadbook=<id>`** → nota vocale di un waypoint, **archiviata così com'è
-  (nessun transcoding)** accanto alla sua trascrizione, così una trascrizione errata si può
-  riascoltare. Accesso via `rb_require_edit` come la foto, impone un tetto di **200 note** per roadbook,
-  accetta `lat`/`lon` opzionali, deriva l'estensione dal MIME del browser
-  (`webm`/`ogg`/`m4a`/`mp3`/`wav`, default `webm`) e usa lo stesso nome **non indovinabile** in
-  `public/audio/<roadbook_id>/`. Inserisce la riga in `roadbook_audio`. Gestita lato JSON da
-  `audio_list`/`audio_delete` (vedi §2).
 
 ### images.php — decodifica → AVIF
 [`process_to_avif`](../app/images.php) (GD): decodifica qualsiasi immagine, **scarta gli
 input oltre 50 MP** (guardia anti decompression-bomb), corregge l'orientamento da EXIF,
 opzionalmente ritaglia in quadrato, ridimensiona per stare entro `maxDim` e scrive un **AVIF
-compresso**. **L'originale non viene mai salvato** (il tmp di PHP è auto-rimosso). Le note
-vocali non passano da qui: l'audio è conservato tal quale.
+compresso**. **L'originale non viene mai salvato** (il tmp di PHP è auto-rimosso).
 
 > Le foto sono storage lato server (geotaggate, per roadbook): dentro `roadbook.json` non finiscono
 > mai, e il `.rdbk` le porta solo nel bundle opzionale `photos/` + `media.json` (vedi `CLAUDE.md`).
-> La nota vocale di una nota è invece un blocco `voice` dentro `roadbook.json` (#992).
+> La nota vocale di una nota è invece un blocco `voice` dentro `roadbook.json` (#992): arriva con
+> `rb_save`, non con un upload.
 
 ---
 
@@ -515,7 +513,7 @@ loro somma.
 | [008_admin.sql](../migrations/008_admin.sql) · [009_admin_user_flags.sql](../migrations/009_admin_user_flags.sql) | `users.is_admin`; `users.must_change_password` / `blocked` (vedi [user-management](user-management.md)) |
 | [010_voice_lang.sql](../migrations/010_voice_lang.sql) | `users.voice_lang` (lingua speech-to-text delle note vocali; droppata dalla 040) |
 | [011_pending_email.sql](../migrations/011_pending_email.sql) | `users.pending_email` (cambio email in attesa di conferma) |
-| [012_roadbook_audio.sql](../migrations/012_roadbook_audio.sql) | tabella `roadbook_audio` (note vocali, FK + cascade, geotag) |
+| [012_roadbook_audio.sql](../migrations/012_roadbook_audio.sql) | tabella `roadbook_audio` (droppata dalla 047) |
 | [013_default_location.sql](../migrations/013_default_location.sql) | `users.default_lat` / `default_lon` (posizione mappa di default) |
 | [014_ui_lang.sql](../migrations/014_ui_lang.sql) | `users.ui_lang` (lingua UI preferita, `en`/`es`/`it`) |
 | [015_roadbook_status.sql](../migrations/015_roadbook_status.sql) | `roadbooks.status` enum `draft`/`ready`/`public` (#96); backfill dal vecchio `is_public` |
@@ -548,13 +546,14 @@ loro somma.
 | [041_roadbook_comments.sql](../migrations/041_roadbook_comments.sql) | tabella `roadbook_comments` (commenti pubblici sotto un roadbook pubblico, #809) |
 | [042_run_device.sql](../migrations/042_run_device.sql) | `roadbook_runs.device` (modello/OS del dispositivo della run, solo per gli admin, #870) |
 | [046_drop_roadbook_category.sql](../migrations/046_drop_roadbook_category.sql) | drop di `roadbooks.category`: il formato .rdbk non ha una categoria (#986) |
+| [047_drop_roadbook_audio.sql](../migrations/047_drop_roadbook_audio.sql) | drop di `roadbook_audio`: una nota vocale è un blocco `voice` della sua nota, dentro il documento (#992) |
 
-**Tabelle:** `users`, `roadbooks`, `roadbook_photos`, `roadbook_audio`, `roadbook_locks`,
+**Tabelle:** `users`, `roadbooks`, `roadbook_photos`, `roadbook_locks`,
 `roadbook_runs`, `roadbook_comments`, `api_tokens`, `activity_log`, `settings`, `events`,
 `event_roadbooks`, `event_organizers`, `event_participants`, `event_results`. I token (verify/reset/api) sono colonne/righe con
 **solo l'hash**; `pending_email` tiene il nuovo indirizzo finché il cambio non è confermato. Le FK
 sono `ON DELETE CASCADE`: cancellare un utente porta via i suoi roadbook, i suoi eventi e le sue
-righe di partecipazione; cancellare un roadbook porta via foto, note vocali e lock; i suoi token
+righe di partecipazione; cancellare un roadbook porta via foto e lock; i suoi token
 restano legati all'utente. Ogni migrazione dello schema segue la **regola schema-first** (applicata
 a prod *prima* del codice che la legge, vedi `CLAUDE.md`).
 
@@ -582,10 +581,11 @@ a prod *prima* del codice che la legge, vedi `CLAUDE.md`).
   tile delle mappe), più `X-Content-Type-Options: nosniff` e `Referrer-Policy`.
 - **Iniezione SQL:** non possibile per come è scritto — prepared statement reali ovunque,
   nessuna concatenazione.
-- **Foto e note vocali priv<i>ate</i>:** non sono dietro auth a livello di file — stanno in
-  `public/photos/` e `public/audio/` e sono servite staticamente dal web server. La protezione
-  è il **nome casuale a 16 hex** (non enumerabile), non un controllo di accesso. Chi ha l'URL
-  vede/ascolta il media anche se il roadbook è privato.
+- **Foto priv<i>ate</i>:** non sono dietro auth a livello di file — stanno in `public/photos/` e
+  sono servite staticamente dal web server. La protezione è il **nome casuale a 16 hex** (non
+  enumerabile), non un controllo di accesso. Chi ha l'URL vede la foto anche se il roadbook è
+  privato. Le note vocali invece stanno nel documento, fuori dalla web root, e passano per gli
+  stessi controlli d'accesso del roadbook.
 - **Avatar prevedibili:** l'avatar è `public/avatars/<user_id>.avif`, cioè un URL pubblico e
   indovinabile dato l'`id` — accettabile perché l'avatar è per natura pubblico.
 - **Firma del Bearer token:** è un segreto opaco hashato con pepper. Si revoca il singolo token al
@@ -607,12 +607,12 @@ a prod *prima* del codice che la legge, vedi `CLAUDE.md`).
 - **Niente re-invio della mail di verifica:** se il link a 24 h scade, l'account resta
   inattivabile dai soli endpoint qui presenti.
 - **Rate limit:** APCu con fallback su file, sempre applicato (vedi §9).
-- **Quota disco per-utente (#99):** oltre ai tetti locali (60 foto *per galleria*, 200 note
-  vocali *per roadbook*, 12 MB *per upload*) c'è un limite di spazio totale per account
+- **Quota disco per-utente (#99):** oltre ai tetti locali (60 foto *per galleria*, 12 MB *per upload*,
+  60 MB *per documento* roadbook, note vocali comprese) c'è un limite di spazio totale per account
   (`DEFAULT_QUOTA_BYTES` 50 MB, sovrascrivibile per utente da un admin via `quota_bytes`):
-  superato, gli upload di foto/audio rispondono `413`. Non c'è invece un tetto sul numero di
+  superato, gli upload di foto e `rb_save` rispondono `413`. Non c'è invece un tetto sul numero di
   roadbook.
-- **Foto e note vocali private non sono davvero private** a livello di accesso (vedi §9): la
+- **Le foto private non sono davvero private** a livello di accesso (vedi §9): la
   riservatezza è "by obscurity" via nome file casuale.
 - **Pulizia differita al cron** (`cron/cron.php`, round-robin un task/minuto): bozze `rb_draft`
   mai finite (`note_count = 0`, slot 0 — riga prima, poi file, come ogni purge), retention log
@@ -623,5 +623,5 @@ a prod *prima* del codice che la legge, vedi `CLAUDE.md`).
   dagli **eventi**: gli organizzatori (proprietario, co-organizzatori, admin) di un evento
   **co-editano** i roadbook associati (#123, con soft lock #154 — la pubblicazione resta del
   proprietario), e un roadbook `ready` associato è **consegnato** in lettura ai partecipanti
-  attivi e agli organizzatori (#25) — mai la sua galleria né le note vocali.
+  attivi e agli organizzatori (#25) — mai la sua galleria.
 - **SendGrid hard-coded** come provider mail; nessun fallback SMTP.

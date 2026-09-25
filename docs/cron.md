@@ -32,9 +32,9 @@ Each task runs a **bounded batch** per invocation (e.g. 500 drafts, 5000 log row
 ### Slot 0 — Cleanup drafts (`cleanup-drafts.php`)
 
 The Recorder and Editor create a `rb_draft` at the start of recording so photos
-and voice notes can attach live. If the user never finishes, the draft stays with
+can attach live. If the user never finishes, the draft stays with
 `note_count = 0`. This task purges such orphans **older than 2 days**, calling
-`purge_roadbook_files()` to remove the `.rdbk` file, photos and audio directories.
+`purge_roadbook_files()` to remove the `.rdbk` file and the photos directory.
 
 - **Limit**: 500 rows per run
 - **Guard**: `note_count = 0 AND status = 'draft' AND created_at < NOW() - 2 DAY`
@@ -50,7 +50,7 @@ Retention policy: security actions (login, join, admin actions) are kept for
 
 When a user deletes a roadbook (`rb_delete` → `status = 'deleted'`), it enters the
 trash for `TRASH_DAYS` days (configurable, default 30). After that this task
-hard‑deletes the row (cascading to photos and audio via FK) and removes the files.
+hard‑deletes the row (cascading to its photos via FK) and removes the files.
 
 - **Limit**: 200 rows per run
 - **Guard**: `status = 'deleted' AND updated_at < NOW() - TRASH_DAYS`

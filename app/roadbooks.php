@@ -33,10 +33,10 @@ function rb_list(array $user): void {
     $st = db()->prepare("SELECT " . RB_CARD_SQL . ", r.status, r.updated_at, r.filename FROM roadbooks r WHERE r.user_id = ? AND r.status <> 'deleted' ORDER BY r.updated_at DESC");
     $st->execute([$user['id']]);
     $rbs = array_map(fn($r) => rb_card_fields($r) + ['status' => $r['status'], 'updated_at' => $r['updated_at'], 'filename' => $r['filename']], $st->fetchAll());
-    // Per-roadbook disk usage: the .rdbk file + photos + audio (#246)
+    // Per-roadbook disk usage: the .rdbk file (its voice notes inside) + photos (#246)
     foreach ($rbs as &$rb) {
         $rid = (int)$rb['id'];
-        $bytes = dir_size($CFG['photos_dir'] . '/' . $rid) + dir_size($CFG['audio_dir'] . '/' . $rid);
+        $bytes = dir_size($CFG['photos_dir'] . '/' . $rid);
         if (!empty($rb['filename']) && $rb['filename'] !== 'pending') {
             $f = $CFG['storage'] . '/' . (int)$user['id'] . '/' . $rb['filename'];
             if (is_file($f)) $bytes += (int)@filesize($f);
@@ -221,6 +221,8 @@ function rb_track_length(array $track): int {
 function rb_save(array $user, array $d): void {
     $rb = $d['roadbook'] ?? null;
     if (!rb_valid_document($rb)) fail('This file is not a valid .rdbk roadbook.');
+    $json = json_encode($rb);
+    if (strlen($json) > RB_MAX_BYTES) fail('This roadbook is too large (60 MB at most).', 413);
     $title = mb_substr(trim((string)$rb['meta']['title']), 0, 200);
     $dist = rb_track_length($rb['track']);
     $nc = count($rb['notes']);
@@ -244,7 +246,6 @@ function rb_save(array $user, array $d): void {
         $dir = rb_dir((int)$row['user_id']);
         $slug = $row['slug'] ?: unique_slug('roadbooks', $title, 'roadbook', $id); // every roadbook gets a slug (view page works private too)
         $fn = $row['filename'] === 'pending' ? $id . '.rdbk' : $row['filename']; // first save of a recording draft gets its real file
-        $json = json_encode($rb);
         $path = $dir . '/' . $fn;
         rb_assert_quota((int)$row['user_id'], is_file($path) ? (int)filesize($path) : 0, strlen($json));
         if (!rb_write_file($path, $json)) fail('Could not write the roadbook file.', 500);
@@ -254,7 +255,6 @@ function rb_save(array $user, array $d): void {
     } else {
         $dir = rb_dir((int)$user['id']); // a brand-new roadbook is always the saver's own
         $vehicles = $vehicles ?? 'car';
-        $json = json_encode($rb);
         rb_assert_quota((int)$user['id'], 0, strlen($json));
         db()->prepare('INSERT INTO roadbooks (user_id, title, total_distance, note_count, status, reusable, vehicles, filename) VALUES (?,?,?,?,?,?,?,?)')
             ->execute([$user['id'], $title, $dist, $nc, $status, $reusable, $vehicles, 'pending']);
@@ -290,8 +290,8 @@ function rb_duplicate(array $user, array $d): void {
     $dir = rb_dir((int)$user['id']);
     $srcPath = $dir . '/' . $src['filename'];
     if (!is_file($srcPath)) fail('File missing.', 404);
-    // the copy doubles the roadbook on its owner's disk: the file and every photo + voice note
-    $copyBytes = (int)filesize($srcPath) + dir_size($CFG['photos_dir'] . '/' . $srcId) + dir_size($CFG['audio_dir'] . '/' . $srcId);
+    // the copy doubles the roadbook on its owner's disk: the file (its voice notes inside) and every photo
+    $copyBytes = (int)filesize($srcPath) + dir_size($CFG['photos_dir'] . '/' . $srcId);
     rb_assert_quota((int)$user['id'], 0, $copyBytes);
 
     // Every row lands in one transaction: a mid-way failure (a fail() exit included — the
@@ -323,44 +323,15 @@ function rb_duplicate(array $user, array $d): void {
                 $ins->execute([$newId, $ph['filename'], $ph['lat'], $ph['lon'], $ph['sort']]);
             }
         }
-        // carry the voice notes over: copy each clip and its row
-        $a = $pdo->prepare('SELECT filename, lat, lon FROM roadbook_audio WHERE roadbook_id = ? ORDER BY id');
-        $a->execute([$srcId]);
-        $clips = $a->fetchAll();
-        if ($clips) {
-            $srcAudioDir = $CFG['audio_dir'] . '/' . $srcId;
-            $dstAudioDir = $CFG['audio_dir'] . '/' . $newId;
-            if (!is_dir($dstAudioDir)) mkdir($dstAudioDir, 0755, true);
-            $insA = $pdo->prepare('INSERT INTO roadbook_audio (roadbook_id, filename, lat, lon) VALUES (?,?,?,?)');
-            foreach ($clips as $cl) {
-                @copy($srcAudioDir . '/' . $cl['filename'], $dstAudioDir . '/' . $cl['filename']);
-                $insA->execute([$newId, $cl['filename'], $cl['lat'], $cl['lon']]);
-            }
-        }
         $pdo->commit();
     } catch (\Throwable $x) { $pdo->rollBack(); throw $x; }
     json_out(['ok' => true, 'id' => $newId, 'title' => $title, 'slug' => $slug]);
 }
 
-/* Media delete, shared by ph_delete/audio_delete: one row + its file (#214 DRY). Whoever may
-   EDIT the roadbook may delete its media — an event's co-organizer adds photos through exactly
-   the same right (upload.php uses rb_require_edit), and could not remove them again (#525). */
-function rb_media_delete(array $user, int $id, string $table, string $dirKey): void {
-    global $CFG;
-    $st = db()->prepare("SELECT m.filename, m.roadbook_id FROM $table m WHERE m.id = ?");
-    $st->execute([$id]);
-    $row = $st->fetch();
-    if (!$row) fail('Not found.', 404);
-    rb_require_edit($user, (int)$row['roadbook_id']);   // owner or event co-editor, or it fails here
-    @unlink($CFG[$dirKey] . '/' . $row['roadbook_id'] . '/' . $row['filename']);
-    db()->prepare("DELETE FROM $table WHERE id = ?")->execute([$id]);
-    json_out(['ok' => true]);
-}
-
-/* Listing a roadbook's gallery photos and voice notes (with their geotags) is for whoever may EDIT
-   it — the owner or an event co-editor (rb_require_edit). The media is the authors' working
-   material: a public roadbook discloses only its cover (public_get, #316), and an event participant
-   reading a delivered READY roadbook never sees its photos or voice notes (#214). */
+/* Listing a roadbook's gallery photos (with their geotags) is for whoever may EDIT it — the owner or
+   an event co-editor (rb_require_edit). The photos are the authors' working material: a public
+   roadbook discloses only its cover (public_get, #316), and an event participant reading a delivered
+   READY roadbook never sees them (#214). */
 function ph_list(array $user, array $d): void {
     $rbId = (int)($d['roadbook'] ?? 0);
     rb_require_edit($user, $rbId);
@@ -371,8 +342,18 @@ function ph_list(array $user, array $d): void {
     json_out(['ok' => true, 'photos' => $photos]);
 }
 
+/* Whoever may EDIT the roadbook may delete its photos — an event's co-organizer adds photos through
+   exactly the same right (upload.php uses rb_require_edit), and could not remove them again (#525). */
 function ph_delete(array $user, array $d): void {
-    rb_media_delete($user, (int)($d['id'] ?? 0), 'roadbook_photos', 'photos_dir');
+    global $CFG;
+    $st = db()->prepare('SELECT filename, roadbook_id FROM roadbook_photos WHERE id = ?');
+    $st->execute([(int)($d['id'] ?? 0)]);
+    $row = $st->fetch();
+    if (!$row) fail('Not found.', 404);
+    rb_require_edit($user, (int)$row['roadbook_id']);   // owner or event co-editor, or it fails here
+    @unlink($CFG['photos_dir'] . '/' . $row['roadbook_id'] . '/' . $row['filename']);
+    db()->prepare('DELETE FROM roadbook_photos WHERE id = ?')->execute([(int)($d['id'] ?? 0)]);
+    json_out(['ok' => true]);
 }
 
 // Reposition a photo's pin on the map (update its lat/lon).
@@ -388,20 +369,6 @@ function ph_move(array $user, array $d): void {
     rb_require_edit($user, $rbId); // owner or event co-editor, like every other media action
     db()->prepare('UPDATE roadbook_photos SET lat = ?, lon = ? WHERE id = ?')->execute([$lat, $lon, $id]);
     json_out(['ok' => true]);
-}
-
-/* ---- voice notes: recorded audio clips, geotagged, per roadbook ---- */
-function audio_list(array $user, array $d): void {
-    $rbId = (int)($d['roadbook'] ?? 0);
-    rb_require_edit($user, $rbId);
-    $a = db()->prepare('SELECT id, filename, lat, lon FROM roadbook_audio WHERE roadbook_id = ? ORDER BY id');
-    $a->execute([$rbId]);
-    $audio = array_map(fn($r) => ['id' => (int)$r['id'], 'url' => '/audio/' . $rbId . '/' . $r['filename'], 'lat' => $r['lat'] !== null ? (float)$r['lat'] : null, 'lon' => $r['lon'] !== null ? (float)$r['lon'] : null], $a->fetchAll());
-    json_out(['ok' => true, 'audio' => $audio]);
-}
-
-function audio_delete(array $user, array $d): void {
-    rb_media_delete($user, (int)($d['id'] ?? 0), 'roadbook_audio', 'audio_dir');
 }
 
 /* ---- public (no auth): home gallery + challenge page ---- */
@@ -441,7 +408,7 @@ function public_get(array $d): void {
     $viaEvent = !$isOwner && $me && $row['status'] === 'ready' && event_grants_read($me, (int)$row['id']);
     if ($row['status'] !== 'public' && !$isOwner && !$viaEvent) fail('This roadbook is private.', 403);
     $rb = rb_read_payload($row);
-    // Cover only (route-map preview, sort = -1). Gallery photos and audio are editor-only
+    // Cover only (route-map preview, sort = -1). Gallery photos are editor-only
     // working material — not disclosed through the challenge/player (#316).
     $c = db()->prepare('SELECT filename FROM roadbook_photos WHERE roadbook_id = ? AND sort = -1');
     $c->execute([$row['id']]);
