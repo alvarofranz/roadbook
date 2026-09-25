@@ -314,7 +314,7 @@ documento a sé:
 - **Validator (`/validator/`)** — si trascina o si sceglie un `.rdbk` (o un `roadbook.json`) e lo si
   valida nel browser con le stesse funzioni del resto dell'app (`RBZip.inspect` · `RB.validateRoadbook`
   · `RB.validateMedia`): nulla viene caricato né salvato. Mostra il verdetto, i dati del file e i
-  primi 100 errori e warning col loro percorso. Linkato dal footer e da `/standard`, in sitemap;
+  primi 100 errori e warning col loro percorso. Linkato dalla landing di `/standard` (il suo primo pulsante), in sitemap;
   documentato in [rdbk-format](rdbk-format.md) §13.
 - **Feature pages (`/features/<tool>/`)** — una pagina "How it works" per ogni tool (recorder ·
   editor · reader · tripmaster · ranking): marketing + spiegazione, con SEO dedicato e le stringhe

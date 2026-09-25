@@ -409,7 +409,7 @@ describe('one tool, one icon, everywhere (#480)', () => {
     // other surface used fa-ranking-star, and the Editor's "start from a public roadbook" card
     // still wore the trophy of the old "challenge" naming (#426).
     const CANONICAL = {
-        recorder: 'fa-circle-dot', editor: 'fa-pen-ruler', reader: 'fa-compass',
+        recorder: 'fa-circle-dot', editor: 'fa-pen', reader: 'fa-compass',
         tripmaster: 'fa-gauge-high', ranking: 'fa-ranking-star',
     };
 
@@ -737,7 +737,7 @@ describe('an open menu follows a language switch (#495)', () => {
     it('the app home tiles name themselves through i18n (#720)', () => {
         const home = read('public/index.html');
         expect(home).toContain('<b data-i18n="Record a route">Record a route</b>');
-        expect(home).toContain('<a class="choice-card center compact" href="editor/"><i class="fa-solid fa-pen-ruler"></i><b data-i18n="Editor">Editor</b></a>');
+        expect(home).toContain('<a class="choice-card center compact" href="editor/"><i class="fa-solid fa-pen"></i><b data-i18n="Editor">Editor</b></a>');
         expect(home).toContain('data-i18n-aria="RDBK sections"');
     });
 });

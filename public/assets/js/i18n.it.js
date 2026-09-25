@@ -707,7 +707,7 @@ Object.assign(window.RBi18nLangs.it, {
 /* the .rdbk standard page (/standard/) */
 Object.assign(window.RBi18nLangs.it, {
     'title.h1': 'Lo standard <span class="accent">.rdbk</span>',
-    'lead.spec': 'Un formato aperto per roadbook digitali, impacchettato come contenitore <b>ZIP</b>. Un <code>roadbook.json</code> UTF-8 autosufficiente porta con sé tutto il percorso — traccia, note, rotte, diagrammi degli incroci <b>e i suoi simboli</b> — insieme a foto e note vocali opzionali: un roadbook è semplicemente un file che puoi leggere, seguire, condividere e archiviare.',
+    
     'Why .rdbk': 'Perché .rdbk',
     'container': 'contenitore',
     'Structure': 'Struttura',
@@ -1321,7 +1321,7 @@ Object.assign(window.RBi18nLangs.it, {
 Object.assign(window.RBi18nLangs.it, {
     "Could not reach the server — check your connection and try again.": "Impossibile raggiungere il server — controlla la connessione e riprova.",
     "The server did not answer properly — please try again in a moment.": "Il server non ha risposto correttamente — riprova tra un momento.",
-    "Delete the last note": "Elimina l’ultima nota",
+    
 });
 
 /* event card state (#770) */
@@ -1415,7 +1415,7 @@ Object.assign(window.RBi18nLangs.it, {
 /* Recorder: notes and photos, the GPS-fix toast, the Editor feature line */
 Object.assign(window.RBi18nLangs.it, {
     
-    "Record a Roadbook with geotagged notes and photos.": "Registra un Roadbook con note e foto georeferenziate.",
+    
     "GPS track, notes and photos": "Traccia GPS, note e foto",
     "Record a Roadbook with notes, photos and geotags.": "Registra un Roadbook con note, foto e geotag.",
     "Build a roadbook from a GPX; design each note with rally standards.": "Crea un roadbook da un GPX e disegna ogni nota con gli standard dei rally.",
@@ -1548,8 +1548,8 @@ Object.assign(window.RBi18nLangs.it, {
     
     "One tap drops a note right where you are.": "Un tocco segna una nota esattamente dove sei.",
     "Pinned to the track at your position.": "Fissata sulla traccia, nella tua posizione.",
-    "Undo note": "Annulla nota",
-    "Removes the last note.": "Toglie l’ultima nota.",
+    
+    
     "Your track": "La tua traccia",
     "The big number is the distance since the last note.": "Il numero grande è la distanza dall’ultima nota.",
     "Stops recording until you resume.": "Ferma la registrazione finché non riprendi.",
@@ -1926,7 +1926,7 @@ Object.assign(window.RBi18nLangs.it, {
 
 /* The .rdbk validator (#986) */
 Object.assign(window.RBi18nLangs.it, {
-    ".rdbk validator": "Validatore .rdbk",
+    
     "seo.validator.title": "Validatore .rdbk — RDBK.app",
     "seo.validator.desc": "Verifica che un roadbook .rdbk segua lo standard aperto: ogni errore nel suo punto esatto, nel tuo browser — il file non viene mai caricato.",
     "The .rdbk validator": "Il validatore .rdbk",
@@ -2029,7 +2029,7 @@ Object.assign(window.RBi18nLangs.it, {
     "s1.notes.radius": "Il raggio di convalida della nota (metri). Senza: <code>meta.default_validation_radius</code>, poi quello del tipo, poi 30 m.",
     "s1.notes.symbols": "Simboli posizionati — vedi <a href=\"#icons\">simboli</a>.",
     "s1.notes.imported_tulip": "Una vignetta importata da un altro formato (es. OpenRally): <code>{ \"image\": URI data, \"shown\"?: false }</code>. Finché è mostrata è l’intera vignetta; <code>\"shown\": false</code> disegna la vignetta propria della nota, conservando l’originale.",
-    "s1.notes.blocks": "Materiale che la nota porta con sé — una foto, una pubblicità, un testo — prima o dopo di essa: <code>{ \"type\": \"photo\" | \"ad\" | \"text\", \"placement\": \"before\" | \"after\", \"image\"?: URI data, \"text\"?: testo }</code>. Mai un waypoint: non numerato, non in mappa, non a punteggio, non esportato come tale.",
+    "s1.notes.blocks": "Materiale che la nota porta con sé — una foto, una pubblicità, un testo — prima o dopo di essa: <code>{ \"type\": \"photo\" | \"ad\" | \"text\", \"placement\": \"before\" | \"after\", \"image\"?: URI data, \"text\"?: testo }</code>. Mai un waypoint: non numerato, non in mappa, non a punteggio, non esportato come tale. Una nota vocale è <code>{ \"type\": \"voice\", \"audio\": URI data, \"lead_distance\"?: intero }</code>: si ascolta, non si vede — un lettore la riproduce da solo <code>lead_distance</code> metri prima della nota (predefinito 100).",
     "s1.notes.compatibility": "Ciò che un altro formato diceva di questa nota — vedi <a href=\"#compatibility\">compatibility</a>.",
     "s1.derived": "Mai scritti, sempre calcolati — allo stesso modo da ogni lettore, così due app mostrano gli stessi numeri. Le distanze sono haversine su una sfera di raggio <b>6 371 000 m</b>, arrotondate a metri interi.",
     "s1.symbols.h2": "Simboli (<code>symbols</code>)",
@@ -2080,4 +2080,46 @@ Object.assign(window.RBi18nLangs.it, {
 /* The .rdbk 1 specification: danger */
 Object.assign(window.RBi18nLangs.it, {
     "s1.notes.danger": "Gradazione di pericolo stile FIA. Resa come <span class=\"danger-marks\">!</span> / <span class=\"danger-marks\">!!</span> / <span class=\"danger-marks\">!!!</span> in rosso dentro il riquadro del diagramma (mai nella colonna del testo). Assente = nessun pericolo.",
+});
+
+/* Turnstile that does not load (#988) */
+Object.assign(window.RBi18nLangs.it, {
+    "The security check did not load. Retry, or allow challenges.cloudflare.com if a strict tracking protection blocks it.": "La verifica di sicurezza non si è caricata. Riprova, oppure consenti challenges.cloudflare.com se una protezione antitracciamento rigorosa la blocca.",
+    "Retry": "Riprova",
+});
+
+/* Recorder voice notes, admin blind start (#992 · #993) */
+Object.assign(window.RBi18nLangs.it, {
+    "Voice note": "Nota vocale",
+    "Microphone unavailable.": "Microfono non disponibile.",
+    "No audio captured.": "Nessun audio registrato.",
+    "Voice note saved.": "Nota vocale salvata.",
+    
+    
+    
+    
+});
+
+/* Voice notes as a note extra; admin blind start (#992 · #993) */
+Object.assign(window.RBi18nLangs.it, {
+    "Hold to record a voice note": "Tieni premuto per registrare una nota vocale",
+    "Hold to record: the note drops here with its sound, played before it when you navigate.": "Tieni premuto per registrare: la nota cade qui con il suo audio, che suona prima di lei in navigazione.",
+    "Admin: start without waiting for the GPS": "Admin: inizia senza aspettare il GPS",
+    "Played by itself before the note while navigating.": "Si riproduce da sola prima della nota in navigazione.",
+    "Record": "Registra",
+    "Record again": "Registra di nuovo",
+    "Play before the note (m)": "Suona prima della nota (m)",
+    "Must be an audio data: URI.": "Deve essere un URI data: audio.",
+});
+
+/* Recorder landing: voice notes (#992) */
+Object.assign(window.RBi18nLangs.it, {
+    "Record a Roadbook with geotagged notes, photos and voice notes.": "Registra un Roadbook con note, foto e note vocali georeferenziate.",
+    "Hold the microphone for a voice note: it plays before its note when you navigate.": "Tieni premuto il microfono per una nota vocale: suona prima della sua nota in navigazione.",
+});
+
+/* The standard: a plain intro (#986) */
+Object.assign(window.RBi18nLangs.it, {
+    "s1.lead": "<b>Un file, l’intero roadbook.</b> Un <code>.rdbk</code> contiene il percorso, le sue note e tutto ciò che disegnano, così qualsiasi app può aprirlo, seguirlo e conservarlo — offline, su qualsiasi dispositivo, anche anni dopo.",
+    "See an example": "Vedi un esempio",
 });

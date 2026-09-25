@@ -479,8 +479,9 @@ opzionalmente ritaglia in quadrato, ridimensiona per stare entro `maxDim` e scri
 compresso**. **L'originale non viene mai salvato** (il tmp di PHP è auto-rimosso). Le note
 vocali non passano da qui: l'audio è conservato tal quale.
 
-> Foto e note vocali sono una **funzione solo dell'app** (storage lato server, geotaggate): non
-> finiscono mai dentro il file `.rdbk`, che resta autocontenuto e portabile (vedi `CLAUDE.md`).
+> Le foto sono storage lato server (geotaggate, per roadbook): dentro `roadbook.json` non finiscono
+> mai, e il `.rdbk` le porta solo nel bundle opzionale `photos/` + `media.json` (vedi `CLAUDE.md`).
+> La nota vocale di una nota è invece un blocco `voice` dentro `roadbook.json` (#992).
 
 ---
 

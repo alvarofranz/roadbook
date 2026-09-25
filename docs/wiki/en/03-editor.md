@@ -113,6 +113,19 @@ Right column: `.note-mini` rows. Tap a row → **inline editor moves** under tha
 | **CAP** | Toggle row → calculates `bearingDeg` + `haversineM` toward next note | Last note: no CAP |
 | **Icons / Vignette** | `NoteCanvas` on `#noteCanvas` | Standard palette + embedded custom (see § below) |
 
+### The note's extras
+
+Next to the **Note** and **Icon** tabs, one tab per extra — the material that goes with the note. A tab that already holds something is lit.
+
+| Tab | What it holds |
+|-----|---------------|
+| **Photo** | A picture with a caption, **Before the note** or **After the note** |
+| **Ad** | A sponsor's image with a caption, before or after the note |
+| **Heading** | A block of text, before or after the note |
+| **Voice note** | A sound, played by itself before the note while navigating |
+
+**Voice note**: **Record** turns on the microphone, **Stop** ends the recording, **Record again** replaces it; the player plays it back. **Play before the note (m)** is how many metres before the note the Reader plays it by itself — 100 unless you set it. **Delete** removes it (after asking). Only the sound is kept, inside the roadbook — no transcription. A voice note held in the Recorder arrives already in its note's **Voice note** tab.
+
 ### Drag on map (Move tool)
 Note is dragged from the blue marker → moves the **track vertex** underneath → line follows. Note moves like a track point.
 
@@ -169,7 +182,7 @@ Second view (`showView('config')`), tab `#viewConfig`:
 
 ### Lightbox
 Tap pin / thumbnail → full-screen viewer (covers only the map, **not** the note panel → you keep editing). ‹/› arrows, `←`/`→`, `Esc`. Actions:
-- **Waypoint** → creates a waypoint at the photo position
+- **Note** → creates a note at the photo position
 - **Move on map** → *place* mode → next tap updates coords via `ph_move`
 - **Delete** → `ph_delete` (with confirmation) + updates lightbox + pin
 

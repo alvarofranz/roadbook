@@ -6,19 +6,32 @@ const read = (p) => fs.readFileSync(p, 'utf8');
 const html = read('public/recorder/index.html'), rec = read('public/recorder/recorder.js'), app = read('public/assets/js/app.js');
 
 describe('the Recorder while riding (#768)', () => {
-    it('is one big Note beside a 2×2 grid: photo · undo · map style · course-up', () => {
+    it('is the big Note (40%), Photo over Voice note (40%) and the map’s switches (20%) (#992)', () => {
         expect(html).toMatch(/<div class="rec-capture">\s*<button class="btn btn-primary rec-note" id="recWpt"/);
-        for (const id of ['recPhoto', 'recUndo', 'recLayer', 'recHeading']) expect(html).toMatch(new RegExp(`<div class="rec-grid">[\\s\\S]*id="${id}"`));
+        expect(html).toContain('.rec-capture { display: grid; grid-template-columns: 2fr 2fr 1fr;');
+        expect(html).toMatch(/<div class="rec-col">\s*<button[^>]*id="recPhoto"[\s\S]*?id="recVoice"[\s\S]*?<\/div>\s*<div class="rec-col">\s*<button[^>]*id="recLayer"[\s\S]*?id="recHeading"/);
+        expect(html).not.toContain('recUndo');
     });
-    it('has no text prompt, no dictation and no voice note', () => {
-        expect(html + rec).not.toMatch(/recWptAudio|RBWaypointPrompt|SpeechRecognition|MediaRecorder|voiceLang/);
+    it('has no text prompt and no dictation: a voice note keeps only its sound (#992)', () => {
+        expect(html + rec).not.toMatch(/recWptAudio|RBWaypointPrompt|SpeechRecognition|voiceLang/);
         expect(app).not.toContain('RBWaypointPrompt');
+    });
+    it('records a voice note while the button is held, and stops when it is let go (#992)', () => {
+        expect(rec).toContain("$('recVoice').addEventListener('pointerdown', (e) => {");
+        expect(rec).toContain("['pointerup', 'pointercancel', 'pointerleave'].forEach((ev) => $('recVoice').addEventListener(ev, releaseVoice));");
+        expect(rec).toContain('note.voice = audio; saveSession();');
+        expect(html).toContain('<script src="../assets/js/rb-voice.js');
+    });
+    it('lets an admin start with no usable GPS, fixes of any accuracy kept (#993)', () => {
+        expect(rec).toContain("blindStart = !(state === 'good' || state === 'fair') && isAdmin();");
+        expect(rec).toContain('if (RB.recJunkFix(c.accuracy) && !blindStart) { renderBar(); return; }');
+        expect(rec).toContain('if (blindStart && map && map.map) { const c = map.map.getCenter(); return { lat: c.lat, lon: c.lng }; }');
     });
     it('drops a note at once, with the bell and the big check', () => {
         expect(rec).toMatch(/function dropWaypoint\(lat, lon\) \{[\s\S]*?RBSuccess\.flash\(\);/);
     });
-    it('undoes the last note only after a confirm that names it', () => {
-        expect(rec).toContain("if (!(await RBConfirmDanger(t('Delete note') + ' ' + last.num + '?'))) return;");
+    it('has no undo on the trail: notes are deleted in the Editor (#992)', () => {
+        expect(rec).not.toContain('recUndo');
     });
     it('shows the distance since the last note on the map, the number alone', () => {
         expect(html).toContain('<div class="rec-since" id="recSince">0.00</div>');

@@ -1,6 +1,6 @@
 # Editor — Créer et modifier un roadbook
 
-L'**Editor** est le centre de création : ici vous transformez une trace brute (ou une page blanche) en un roadbook complet avec notes, CAP, danger, types de route, icônes, vignettes tulipe.
+L'**Editor** est le centre de création : ici vous transformez une trace brute (ou une page blanche) en un roadbook complet avec notes, CAP, danger, types de route, icônes, vignettes.
 
 > **Fonctionne hors ligne** pour l'édition pure. Une connexion est nécessaire pour : la connexion, charger/sauvegarder sur le profil, envoyer photos/audio, importer des challenges publics, export PDF/GPX (utilise des bibliothèques lazy-loaded).
 
@@ -99,7 +99,7 @@ Une coupe interne laisse un **trou réel** (pas un segment). Mémorisé comme un
 
 ## Liste de notes + Éditeur en ligne
 
-Colonne de droite : lignes `.note-mini`. Tap sur une ligne → **l'éditeur en ligne se déplace** sous cette ligne (unique `#noteEditZone` physiquement déplacée). Le canvas de vignettes (`#canvasWrap`) se déplace DANS la cellule tulipe.
+Colonne de droite : lignes `.note-mini`. Tap sur une ligne → **l'éditeur en ligne se déplace** sous cette ligne (unique `#noteEditZone` physiquement déplacée). Le canvas de vignettes (`#canvasWrap`) se déplace DANS la cellule de la vignette.
 
 > 📸 *Capture : panneau de notes avec l'éditeur en ligne ouvert sur une note*
 
@@ -112,6 +112,19 @@ Colonne de droite : lignes `.note-mini`. Tap sur une ligne → **l'éditeur en l
 | **Danger** | Select `—` / `!` / `!!` / `!!!` → `n.danger` | 0 = retire |
 | **CAP** | Toggle de ligne → calcule `bearingDeg` + `haversineM` vers la note suivante | Dernière note : pas de CAP |
 | **Icônes / Vignettes** | `NoteCanvas` sur `#noteCanvas` | Palette standard + custom embarquées (voir § ci-dessous) |
+
+### Les extras de la note
+
+À côté des onglets **Note** et **Icône**, un onglet par extra — le contenu qui accompagne la note. Un onglet qui contient déjà quelque chose est allumé.
+
+| Onglet | Ce qu'il contient |
+|--------|-------------------|
+| **Photo** | Une image avec légende, **Avant la note** ou **Après la note** |
+| **Publicité** | L'image d'un sponsor avec légende, avant ou après la note |
+| **Titre** | Un bloc de texte, avant ou après la note |
+| **Note vocale** | Un son, joué tout seul avant la note pendant la navigation |
+
+**Note vocale** : **Enregistrer** allume le micro, **Arrêter** termine l'enregistrement, **Réenregistrer** la remplace ; le lecteur la fait réécouter. **Jouer avant la note (m)** indique combien de mètres avant la note le Reader la joue tout seul — 100 si vous ne le fixez pas. **Supprimer** l'enlève (après confirmation). Seul le son est gardé, dans le roadbook — aucune transcription. Une note vocale enregistrée en maintenant le bouton du Recorder arrive déjà dans l'onglet **Note vocale** de sa note.
 
 ### Glisser sur la carte (outil Déplacer)
 La note se fait glisser depuis le marqueur bleu → déplace **le sommet de trace** dessous → la ligne le suit. La note bouge comme un point de trace.
@@ -169,7 +182,7 @@ Deuxième vue (`showView('config')`), onglet `#viewConfig` :
 
 ### Lightbox
 Tap sur épingle / miniature → visionneuse plein écran (ne couvre que la carte, **pas** le panneau de notes → vous continuez à éditer). Flèches ‹/›, `←`/`→`, `Esc`. Actions :
-- **Waypoint** → crée un waypoint sur la position de la photo
+- **Note** → crée une note sur la position de la photo
 - **Déplacer sur la carte** → mode *positionner* → le prochain tap met à jour les coordonnées via `ph_move`
 - **Delete** → `ph_delete` (avec confirmation) + met à jour le lightbox + épingle
 

@@ -58,7 +58,7 @@ describe('the editor edits a note, or the material around it (#542)', () => {
 
     it('a slot holds a block only while it holds something', () => {
         const prune = editorJs.match(/function pruneBlocks\(n\) \{([\s\S]*?)\n {4}\}/)[1];
-        expect(prune).toContain('n.blocks.filter((b) => b.image || b.text)');
+        expect(prune).toContain('n.blocks.filter(RB.blockHasContent)'); // a picture, words or a sound
         expect(prune).toContain('delete n.blocks');
         // and nothing empty is ever drawn, on any surface
         for (const p of ['public/editor/editor.js', 'public/assets/js/note-canvas.js']) { // the Reader and the public page share note-canvas's rows (#635)
@@ -210,7 +210,7 @@ describe('a photo becomes its note’s Photo extra (#792)', () => {
     it('the Recorder attaches each photo to the note it dropped', () => {
         const rec = fsx.readFileSync('public/recorder/recorder.js', 'utf8');
         expect(rec).toContain('dropWaypoint(lat, lon).photo = token;');
-        expect(rec).toContain('wpts: await withPhotos(wpts)');
+        expect(rec).toContain('wpts: await withExtras(wpts)');
     });
     it('the Editor turns a note’s gallery photo into its extra instead of a viewer over the map', () => {
         const ed = fsx.readFileSync('public/editor/editor.js', 'utf8');

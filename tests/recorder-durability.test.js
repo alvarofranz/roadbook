@@ -133,7 +133,7 @@ describe('photos waiting to upload survive a crash and the sign-in return (#792)
     });
     it('the note’s Photo extra reads a waiting photo from the queue', () => {
         expect(fn('photoBlob')).toContain('p.local ? await RBMediaQueue.get(p.token) : null');
-        expect(fn('withPhotos')).toContain('await photoBlob(p)');
+        expect(fn('withExtras')).toContain('await photoBlob(p)');
     });
     it('a photo the device could not keep is said and marked failed', () => {
         expect(rec).toMatch(/RBMediaQueue\.add\('photo', f, fields, 'photo\.jpg', token\)\.catch\(\(\) => \{\s+pin\.pending = false; pin\.failed = true; saveSession\(\);\s+toast\('Could not save\.'\);/);
@@ -151,8 +151,10 @@ describe('small Recorder fixes', () => {
         expect(rbmap).toContain('headingUp() { return this._headingUp; }');
         expect(rbmap.match(/rbmap\._headingUp/g)).toBe(null);
     });
-    it('describes photos only — no voice notes, no live file', () => {
-        expect(rec).not.toMatch(/voice|live file/);
+    it('keeps no live file, and a voice note rides with its note instead of the upload queue (#992)', () => {
+        expect(rec).not.toMatch(/live file/);
+        expect(rec).not.toContain("RBMediaQueue.add('audio'");
+        expect(rec).toContain("if (w.voice) blocks.push({ type: 'voice', audio: w.voice });");
     });
     it('a lost GPS signal never stops the recording, and says so in every language (#901)', () => {
         expect(rec).toContain("meter = new RBGpsMeter(onFix, () => toast(t('GPS signal lost — the recording carries on and picks up when it returns.'), 4000));");

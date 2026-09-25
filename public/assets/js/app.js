@@ -69,7 +69,7 @@
     // path · i18n label · canonical FontAwesome icon · `covers`: extra route prefixes that light it up.
     const SECTION = {
         recorder:  { path: 'recorder/',  label: 'Recorder',  icon: 'fa-circle-dot' },
-        editor:    { path: 'editor/',    label: 'Editor',    icon: 'fa-pen-ruler' },
+        editor:    { path: 'editor/',    label: 'Editor',    icon: 'fa-pen' },
         navigate:  { path: 'navigate/',  label: 'Navigate',  icon: 'fa-location-arrow', covers: ['tripmaster', 'reader'] },
         reader:    { path: 'reader/',    label: 'Reader',    icon: 'fa-compass' },
         roadbooks: { path: 'roadbooks/', label: 'Roadbooks', icon: 'fa-book-open' },
@@ -96,7 +96,6 @@
         { group: 'Resources', path: 'wiki/',      icon: 'fa-circle-question', label: 'Help' },
         { group: 'Resources', path: 'install/',   icon: 'fa-circle-down',     label: 'Install' },
         { group: 'Resources', path: 'standard/',  icon: 'fa-file-code',       label: 'The .rdbk standard' },
-        { group: 'Resources', path: 'validator/', icon: 'fa-file-circle-check', label: '.rdbk validator' },
         { group: 'Resources', path: 'changelog/', icon: 'fa-clock-rotate-left', label: 'What’s new' },
         { group: 'Resources', path: 'about/',     icon: 'fa-circle-info',     label: 'About' },
         { group: 'Legal',     path: 'privacy/',   icon: 'fa-shield-halved',   label: 'Privacy' },
@@ -1411,26 +1410,43 @@
     // "Show the tours again" (the Profile's Preferences, #925): every tool's tour runs once more, unasked
     RBTour.replay = () => saveTour({ optin: 'yes', seen: [] });
     // Cloudflare Turnstile: ONE loader for every form that asks for the challenge (the account forms,
-    // the roadbook comments #809). RBTurnstile(el, siteKey) renders the widget into `el` and returns
-    // { token(), reset() }. Without a site key (not configured) or inside the app it does nothing and
-    // token() is null: the widget is domain-locked and can't run in the WebView, and the server
-    // exempts the app origins from the challenge to match (verify_turnstile).
+    // the roadbook comments #809, the contact form). RBTurnstile(el, siteKey) renders the widget into
+    // `el` and returns { token(), reset() }. Without a site key (not configured) or inside the app it
+    // does nothing and token() is null: the widget is domain-locked and can't run in the WebView, and
+    // the server exempts the app origins from the challenge to match (verify_turnstile).
+    // The widget renders the moment its box is on screen, never into a hidden one (#988): a challenge
+    // started inside a display:none section (the account page holds three) never finished in Firefox,
+    // so the form showed no widget and could not be sent. A script that will not load or a challenge
+    // that fails says so in the box, with a retry, instead of a silent empty space.
     let turnstileScript = null;
     window.RBTurnstile = (el, siteKey) => {
         let token = null, widget = null;
         const handle = { token: () => token, reset: () => { token = null; if (widget != null) window.turnstile.reset(widget); } };
         if (!el || !siteKey || isNativeApp()) return handle;
-        turnstileScript = turnstileScript || new Promise((resolve, reject) => {
-            const s = document.createElement('script');
-            s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
-            s.async = true; s.onload = resolve; s.onerror = reject;
-            document.head.appendChild(s);
-        });
-        // the script is loaded async, so render straight from its load: the API's ready() hook refuses an
-        // async-loaded api.js and would never fire (the widget then never showed, #863)
-        turnstileScript.then(() => {
-            widget = window.turnstile.render(el, { sitekey: siteKey, theme: 'dark', callback: (t) => { token = t; }, 'expired-callback': () => { token = null; }, 'error-callback': () => { token = null; } });
-        }).catch(() => {}); // blocked or offline: the server answers "Please complete the challenge."
+        const failed = () => {
+            token = null;
+            el.innerHTML = `<p class="turnstile-failed"><i class="fa-solid fa-triangle-exclamation"></i> ${RBesc(RBt('The security check did not load. Retry, or allow challenges.cloudflare.com if a strict tracking protection blocks it.'))} <button type="button" class="btn btn-ghost btn-sm">${RBesc(RBt('Retry'))}</button></p>`;
+            el.querySelector('button').onclick = () => { el.innerHTML = ''; widget = null; render(); };
+        };
+        const render = () => {
+            turnstileScript = turnstileScript || new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+                s.async = true; s.onload = resolve; s.onerror = () => { turnstileScript = null; reject(); };
+                document.head.appendChild(s);
+            });
+            // the script is loaded async, so render straight from its load: the API's ready() hook refuses an
+            // async-loaded api.js and would never fire (the widget then never showed, #863)
+            turnstileScript.then(() => {
+                widget = window.turnstile.render(el, { sitekey: siteKey, theme: 'dark', callback: (t) => { token = t; }, 'expired-callback': () => { token = null; }, 'error-callback': () => { failed(); return true; } });
+            }).catch(failed); // blocked or offline: the box says so, and the server answers "Please complete the challenge."
+        };
+        // render once the box is visible (its section shown), not while it is hidden
+        if (el.offsetParent) render();
+        else {
+            const seen = new IntersectionObserver((entries) => { if (entries.some((e) => e.isIntersecting)) { seen.disconnect(); render(); } });
+            seen.observe(el);
+        }
         return handle;
     };
     window.RBNeedAuth = (msg) => {
@@ -1711,7 +1727,7 @@
        recording, a run or an unsaved draft left in one tool is never silently orphaned. */
     const PENDING_KEYS = ['rb_editor_draft', 'rb_recorder_session', 'rb_recorder_pending_save', 'rb_tripmaster_session', 'rb_session', 'rb_session_roadbook'];
     const PENDING_LABEL = { editor: 'Unsaved draft', recorder: 'Recording in progress', tripmaster: 'Tripmaster run', reader: 'Run in progress' };
-    const PENDING_ICON = { editor: 'fa-pen-ruler', recorder: 'fa-circle-dot', tripmaster: 'fa-gauge-high', reader: 'fa-compass' };
+    const PENDING_ICON = { editor: 'fa-pen', recorder: 'fa-circle-dot', tripmaster: 'fa-gauge-high', reader: 'fa-compass' };
     const curTool = (location.pathname.slice(new URL(ROOT, location.href).pathname.length).replace(/^\/+/, '').split('/')[0]) || '';
     // The work left in OTHER tools (the current tool already prompts to resume its own work).
     function listPending() {

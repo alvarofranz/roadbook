@@ -214,6 +214,13 @@ Il cuore di un roadbook: **almeno una nota**, ognuna su un punto della traccia, 
   waypoint GPX/KMZ. Il testo di un blocco `text` si legge a tutta larghezza; una foto e una
   pubblicità mostrano la loro `image` con la didascalia accanto. `RB.noteBlocks(note, placement)`
   li filtra per lato; `RB.blockType` rende come testo un `type` che il reader non conosce.
+- **Nota vocale (`{ "type": "voice", "audio": data URI audio, "lead_distance"?: int }`, #992).** Il
+  suono di una nota, senza trascrizione: si ascolta, non si vede — niente lato, niente riga, non entra
+  nel PDF. Un reader la riproduce da solo `lead_distance` metri prima della nota lungo il percorso
+  (`RB.voiceLead`: default `RB.VOICE_LEAD_M` = 100, omesso quando è 100), una volta per corsa. La
+  registrano il Recorder (tenendo premuto il microfono) e l'Editor (l'extra *Nota vocale*), entrambi
+  con `RBVoice` (`rb-voice.js`: mono a 24 kbit/s, al massimo 60 s). `RB.blockHasContent` dice se un
+  blocco porta qualcosa (immagine, testo o audio).
 
 ---
 
@@ -434,7 +441,8 @@ default (`text: ""`, `road_type: 2`, `cap_type: "exit"`, `angle: 0`, `mirrored: 
 - Una chiave che il reader non conosce si ignora; i blocchi `compatibility` si conservano nel
   round-trip.
 - Un reader conforme DEVE rendere i `blocks` di una nota attorno a essa — prima o dopo, in ordine — e
-  NON DEVE numerarli, metterli sulla mappa, valutarli o emetterli come waypoint GPX/KMZ.
+  NON DEVE numerarli, metterli sulla mappa, valutarli o emetterli come waypoint GPX/KMZ; una nota
+  vocale la riproduce `lead_distance` metri prima della nota.
 - Il [validatore](#13-il-validatore-validator) controlla un file contro tutte queste regole.
 
 ---

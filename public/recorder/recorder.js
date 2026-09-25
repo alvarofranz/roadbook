@@ -176,14 +176,19 @@
         if (previewDenied) return 'denied';
         return Date.now() - previewAt > GPS_STALE_MS ? 'none' : RB.gpsHealth(previewAcc);
     }
+    /* An admin may start with no usable GPS (#993) — a computer has none — to check the Recorder
+       before riding: the recording keeps every fix whatever its accuracy, and a note or a photo with
+       no fix at all lands where the map is centred. Only for that recording (`blindStart`). */
+    const isAdmin = () => !!(meUser && meUser.is_admin);
+    let blindStart = false;
     function renderGpsHealth() {
         const state = gpsState(), ready = state === 'good' || state === 'fair';
         $('recGps').dataset.health = state;
         $('recGpsTitle').textContent = t(GPS_TEXT[state][0]);
         $('recGpsHint').textContent = t(GPS_TEXT[state][1]);
         $('recGpsAcc').textContent = state !== 'none' && state !== 'denied' ? '±' + Math.round(previewAcc) + ' m' : '';
-        $('recStart').disabled = !(startupDone && ready);
-        $('recStartHint').textContent = t(ready ? 'The GPS starts right away' : 'Waiting for a good GPS signal');
+        $('recStart').disabled = !(startupDone && (ready || isAdmin()));
+        $('recStartHint').textContent = t(ready ? 'The GPS starts right away' : isAdmin() ? 'Admin: start without waiting for the GPS' : 'Waiting for a good GPS signal');
     }
     function startPreview() {
         if (preview || RBGpxRecorder.recording) return;
@@ -208,6 +213,8 @@
     /* ---------- start / pause / finish ---------- */
     $('recStart').onclick = async () => {
         if (!(await RBWebGpsConfirm(false))) return; // one-time browser warning: web GPS is unreliable
+        const state = gpsState();
+        blindStart = !(state === 'good' || state === 'fair') && isAdmin();
         begin(); // Start records: the route is named in the Editor, when it is saved
     };
 
@@ -228,7 +235,7 @@
     const RECORDER_TOUR = [
         { target: '#recWpt', title: 'Note', text: 'One tap drops a note right where you are.' },
         { target: '#recPhoto', title: 'Photo', text: 'Pinned to the track at your position.' },
-        { target: '#recUndo', title: 'Undo note', text: 'Removes the last note.' },
+        { target: '#recVoice', title: 'Voice note', text: 'Hold to record: the note drops here with its sound, played before it when you navigate.' },
         { target: '#recMap', title: 'Your track', text: 'The big number is the distance since the last note.' },
         { target: '#recPause', title: 'Pause', text: 'Stops recording until you resume.' },
         { target: '#recStop', title: 'End', text: 'Save it as a draft roadbook, or discard it.' },
@@ -272,7 +279,7 @@
         if (h != null) course = smoothHeading(course, h);
         if (!lastHeadingPos || RB.geo.haversineM(lastHeadingPos, cur) > 4) lastHeadingPos = cur;
         if (map) map.setPosition(fix.here.lat, fix.here.lon, true, course);
-        if (RB.recJunkFix(c.accuracy)) { renderBar(); return; }
+        if (RB.recJunkFix(c.accuracy) && !blindStart) { renderBar(); return; }
         here = { lat: fix.here.lat, lon: fix.here.lon, ele: (c.altitude != null && isFinite(c.altitude)) ? c.altitude : null };
         lastFixT = fix.tnow; // latest fix time — a dropped waypoint shares the track's time base (#158)
         if (paused) { renderBar(); return; }
@@ -306,6 +313,7 @@
     $('recStop').onclick = async () => {
         if (!(await RBConfirm(t('Finish the recording?')))) return;
         elapsedAcc = elapsed(); segStart = 0; // the clock stops here (and a No below resumes it from here)
+        stopVoice(); // a voice note still recording is kept, like every other capture
         stopMeter();
         // end() stops logging and hands over the track but KEEPS the crash checkpoint: from here
         // until the finish options land it somewhere, this is the only copy of the recording, so
@@ -339,16 +347,48 @@
         RBSuccess.flash();
         return note;
     }
+    // Where a note drops: the last good fix; in an admin's blind start (#993), the map's centre when
+    // there is none
+    function notePosition() {
+        if (here) return here;
+        if (blindStart && map && map.map) { const c = map.map.getCenter(); return { lat: c.lat, lon: c.lng }; }
+        return null;
+    }
     $('recWpt').onclick = () => {
-        if (!here) return toast(t('Waiting for a GPS fix…'));
-        dropWaypoint(here.lat, here.lon);
+        const at = notePosition(); if (!at) return toast(t('Waiting for a GPS fix…'));
+        dropWaypoint(at.lat, at.lon);
     };
-    // Undo a note tapped by mistake: it names the note it removes and asks first
-    $('recUndo').onclick = async () => {
-        const last = wpts[wpts.length - 1]; if (!last) return;
-        if (!(await RBConfirmDanger(t('Delete note') + ' ' + last.num + '?'))) return;
-        wpts.pop(); refreshMap(); saveSession(); renderBar();
+    /* A voice note (#992): HOLD the button — a note drops right here and the microphone records;
+       let go and it stops (RBVoice: at most RBVoice.MAX_S). Only the sound is kept, no transcription:
+       it rides with its note (`voice`, a data: URI kept in the crash checkpoint) and becomes the note's
+       Voice note extra when the roadbook is saved — the Reader plays it before the note. */
+    $('recVoice').hidden = !RBVoice.supported;
+    let voice = null; // { rec, note } while held; rec settles once the microphone is open
+    const paintVoice = (s) => {
+        $('recVoice').classList.toggle('recording', s != null);
+        $('recVoiceTime').hidden = s == null;
+        if (s != null) $('recVoiceTime').textContent = Math.floor(s / 60) + ':' + pad2(s % 60);
     };
+    $('recVoice').addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        if (voice) return;
+        const at = notePosition(); if (!at) return toast(t('Waiting for a GPS fix…'));
+        const note = dropWaypoint(at.lat, at.lon);
+        voice = { note, rec: RBVoice.start({ onTick: paintVoice }) };
+        voice.rec.catch(() => { voice = null; paintVoice(null); toast(t('Microphone unavailable.')); });
+    });
+    const releaseVoice = async () => {
+        if (!voice) return;
+        const { note, rec } = voice; voice = null;
+        let audio = null;
+        try { audio = await (await rec).stop(); } catch (e) { return; } // the microphone never opened: already said
+        paintVoice(null);
+        if (!audio) return toast(t('No audio captured.'));
+        note.voice = audio; saveSession();
+        toast(t('Voice note saved.'));
+    };
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach((ev) => $('recVoice').addEventListener(ev, releaseVoice));
+    function stopVoice() { releaseVoice(); }
     // the map's own switches, big enough to hit on the move: base style · course-up
     $('recLayer').onclick = () => { if (map) map.toggleBaseStyle(); };
     const paintHeading = () => $('recHeading').classList.toggle('on', !!(map && map.headingUp()));
@@ -394,7 +434,7 @@
     };
     $('recPhotoFile').onchange = (e) => {
         const f = e.target.files[0]; e.target.value = ''; if (!f) return;
-        const lat = here ? here.lat : null, lon = here ? here.lon : null;
+        const at = notePosition(), lat = at ? at.lat : null, lon = at ? at.lon : null;
         const fields = { type: 'photo' };
         if (draftId) fields.roadbook = String(draftId); // else resolved at flush time
         if (lat != null) { fields.lat = lat; fields.lon = lon; }
@@ -424,23 +464,25 @@
     // A note dropped by a photo carries that photo as its Photo extra (#792), embedded like any
     // extra; the photo itself stays in the roadbook's gallery. One still waiting to upload is read
     // from its queued capture. A photo that cannot be read (gone from the device, offline) just
-    // leaves its note without the extra.
+    // leaves its note without the extra. A note held as a voice note carries its sound as its Voice
+    // note extra (#992).
     const PHOTO_MAX = RB.blockType({ type: 'photo' }).imageMax;
     async function photoBlob(p) {
         const rec = p.local ? await RBMediaQueue.get(p.token) : null;
         return rec && rec.blob ? rec.blob : (await fetch(p.url)).blob();
     }
-    async function withPhotos(list) {
+    async function withExtras(list) {
         return Promise.all(list.map(async (w) => {
+            const blocks = [];
             const p = w.photo && photos.find((x) => x.token === w.photo);
-            if (!p || !p.url) return w;
-            try { return Object.assign({}, w, { blocks: [{ type: 'photo', placement: 'after', image: await RBImg.toDataURL(await photoBlob(p), PHOTO_MAX) }] }); }
-            catch (e) { return w; }
+            if (p && p.url) { try { blocks.push({ type: 'photo', placement: 'after', image: await RBImg.toDataURL(await photoBlob(p), PHOTO_MAX) }); } catch (e) { /* the note keeps its place without it */ } }
+            if (w.voice) blocks.push({ type: 'voice', audio: w.voice }); // the voice note recorded at it (#992)
+            return blocks.length ? Object.assign({}, w, { blocks }) : w;
         }));
     }
     async function saveToProfile(pts, nm) {
         let roadbook;
-        try { roadbook = RB.buildRoadbook({ name: nm, trkpts: pts, wpts: await withPhotos(wpts) }); }
+        try { roadbook = RB.buildRoadbook({ name: nm, trkpts: pts, wpts: await withExtras(wpts) }); }
         catch (e) { toast(t('Route too short to save.')); return null; }
         const id = await ensureDraft(); // the draft the queued photos also attach to
         const r = await RBApi('rb_save', { id: id || 0, status: 'draft', roadbook: RB.writeRoadbook(roadbook) });
@@ -505,7 +547,6 @@
         $('rbWptsN').textContent = wpts.length;
         const last = wpts[wpts.length - 1];
         $('recSince').textContent = ((recordedM - (last ? last.at_m || 0 : 0)) / 1000).toFixed(2); // since the last note (or the start)
-        $('recUndo').disabled = !last;
         const s = Math.floor(elapsed() / 1000);
         $('rbElapsed').textContent = Math.floor(s / 60) + ':' + pad2(s % 60);
         saveSession();

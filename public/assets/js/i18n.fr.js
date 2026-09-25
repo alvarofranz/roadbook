@@ -172,7 +172,7 @@
             'Replace everything after point {a} with your new {n}-point ending?': 'Remplacer tout après le point {a} par votre nouvelle fin de {n} points ?',
             'title.h1': 'Le standard <span class="accent">.rdbk</span>',
             'container': 'conteneur',
-            'lead.spec': 'Un format ouvert pour roadbooks numériques, empaqueté comme conteneur <b>ZIP</b>. Un <code>roadbook.json</code> UTF-8 autonome contient l’itinéraire complet — trace, notes, caps, diagrammes de carrefour <b>et ses propres symboles</b> — ainsi que des photos et notes vocales optionnelles, si bien qu’un roadbook est simplement un fichier que vous pouvez lire, suivre, partager et archiver.',
+            
             'Why .rdbk': 'Pourquoi .rdbk', 'Structure': 'Structure', 'symbols': 'symboles', 'road types': 'types de voie', 'result QR': 'QR de résultat', 'conformance': 'conformité', 'full example': 'exemple complet',
             'why.selfcontained': '<b>Autonome.</b> Un fichier <code>.rdbk</code> intègre les symboles qu\'il utilise (comme des data URIs), il s\'affiche donc identiquement partout — hors ligne, des années plus tard.',
             'why.onefile': '<b>Du JSON pur à l’intérieur.</b> Ouvrez <code>roadbook.json</code> dans n’importe quel éditeur de texte, parsez-le en une ligne dans n’importe quel langage, comparez-le dans git.',
@@ -1283,7 +1283,7 @@ Object.assign(window.RBi18nLangs.fr, {
 Object.assign(window.RBi18nLangs.fr, {
     "Could not reach the server — check your connection and try again.": "Impossible de joindre le serveur — vérifiez votre connexion et réessayez.",
     "The server did not answer properly — please try again in a moment.": "Le serveur n’a pas répondu correctement — réessayez dans un instant.",
-    "Delete the last note": "Supprimer la dernière note",
+    
 });
 
 /* event card state (#770) */
@@ -1377,7 +1377,7 @@ Object.assign(window.RBi18nLangs.fr, {
 /* Recorder: notes and photos, the GPS-fix toast, the Editor feature line */
 Object.assign(window.RBi18nLangs.fr, {
     
-    "Record a Roadbook with geotagged notes and photos.": "Enregistrez un Roadbook avec des notes et des photos géoréférencées.",
+    
     "GPS track, notes and photos": "Trace GPS, notes et photos",
     "Record a Roadbook with notes, photos and geotags.": "Enregistrez un Roadbook avec notes, photos et géotags.",
     "Build a roadbook from a GPX; design each note with rally standards.": "Créez un roadbook depuis un GPX et concevez chaque note selon les standards rally.",
@@ -1510,8 +1510,8 @@ Object.assign(window.RBi18nLangs.fr, {
     
     "One tap drops a note right where you are.": "Un appui pose une note exactement là où tu es.",
     "Pinned to the track at your position.": "Épinglée sur la trace, à ta position.",
-    "Undo note": "Annuler la note",
-    "Removes the last note.": "Retire la dernière note.",
+    
+    
     "Your track": "Ta trace",
     "The big number is the distance since the last note.": "Le grand chiffre est la distance depuis la dernière note.",
     "Stops recording until you resume.": "Met l’enregistrement en pause jusqu’à ce que tu reprennes.",
@@ -1888,7 +1888,7 @@ Object.assign(window.RBi18nLangs.fr, {
 
 /* The .rdbk validator (#986) */
 Object.assign(window.RBi18nLangs.fr, {
-    ".rdbk validator": "Validateur .rdbk",
+    
     "seo.validator.title": "Validateur .rdbk — RDBK.app",
     "seo.validator.desc": "Vérifiez qu’un roadbook .rdbk suit le standard ouvert : chaque erreur à son endroit exact, dans votre navigateur — le fichier n’est jamais envoyé.",
     "The .rdbk validator": "Le validateur .rdbk",
@@ -1991,7 +1991,7 @@ Object.assign(window.RBi18nLangs.fr, {
     "s1.notes.radius": "Le rayon de validation de la note (mètres). Sans lui : <code>meta.default_validation_radius</code>, puis celui du type, puis 30 m.",
     "s1.notes.symbols": "Symboles positionnés — voir <a href=\"#icons\">symboles</a>.",
     "s1.notes.imported_tulip": "Une vignette importée d’un autre format (p. ex. OpenRally) : <code>{ \"image\": URI data, \"shown\"?: false }</code>. Tant qu’elle est affichée, c’est toute la vignette ; <code>\"shown\": false</code> dessine la vignette propre de la note, l’originale conservée.",
-    "s1.notes.blocks": "Le matériel que porte la note — une photo, une publicité, un texte — avant ou après elle : <code>{ \"type\": \"photo\" | \"ad\" | \"text\", \"placement\": \"before\" | \"after\", \"image\"?: URI data, \"text\"?: texte }</code>. Jamais un waypoint : ni numéroté, ni sur la carte, ni noté, ni exporté comme tel.",
+    "s1.notes.blocks": "Le matériel que porte la note — une photo, une publicité, un texte — avant ou après elle : <code>{ \"type\": \"photo\" | \"ad\" | \"text\", \"placement\": \"before\" | \"after\", \"image\"?: URI data, \"text\"?: texte }</code>. Jamais un waypoint : ni numéroté, ni sur la carte, ni noté, ni exporté comme tel. Une note vocale est <code>{ \"type\": \"voice\", \"audio\": URI data, \"lead_distance\"?: entier }</code> : elle s’écoute, elle ne s’affiche pas — un lecteur la joue seul <code>lead_distance</code> mètres avant la note (par défaut 100).",
     "s1.notes.compatibility": "Ce qu’un autre format disait de cette note — voir <a href=\"#compatibility\">compatibility</a>.",
     "s1.derived": "Jamais écrites, toujours calculées — de la même façon par chaque lecteur, si bien que deux apps affichent les mêmes chiffres. Les distances sont en haversine sur une sphère de rayon <b>6 371 000 m</b>, arrondies au mètre.",
     "s1.symbols.h2": "Symboles (<code>symbols</code>)",
@@ -2042,4 +2042,46 @@ Object.assign(window.RBi18nLangs.fr, {
 /* The .rdbk 1 specification: danger */
 Object.assign(window.RBi18nLangs.fr, {
     "s1.notes.danger": "Niveau de danger de style FIA. Rendu en <span class=\"danger-marks\">!</span> / <span class=\"danger-marks\">!!</span> / <span class=\"danger-marks\">!!!</span> rouges dans le cadre du diagramme (jamais dans la colonne du texte). Absent = aucun danger.",
+});
+
+/* Turnstile that does not load (#988) */
+Object.assign(window.RBi18nLangs.fr, {
+    "The security check did not load. Retry, or allow challenges.cloudflare.com if a strict tracking protection blocks it.": "La vérification de sécurité ne s’est pas chargée. Réessayez, ou autorisez challenges.cloudflare.com si une protection stricte contre le pistage la bloque.",
+    "Retry": "Réessayer",
+});
+
+/* Recorder voice notes, admin blind start (#992 · #993) */
+Object.assign(window.RBi18nLangs.fr, {
+    "Voice note": "Note vocale",
+    "Microphone unavailable.": "Micro indisponible.",
+    "No audio captured.": "Aucun son enregistré.",
+    "Voice note saved.": "Note vocale enregistrée.",
+    
+    
+    
+    
+});
+
+/* Voice notes as a note extra; admin blind start (#992 · #993) */
+Object.assign(window.RBi18nLangs.fr, {
+    "Hold to record a voice note": "Maintenez pour enregistrer une note vocale",
+    "Hold to record: the note drops here with its sound, played before it when you navigate.": "Maintenez pour enregistrer : la note tombe ici avec son son, joué avant elle pendant la navigation.",
+    "Admin: start without waiting for the GPS": "Admin : démarrer sans attendre le GPS",
+    "Played by itself before the note while navigating.": "Jouée seule avant la note pendant la navigation.",
+    "Record": "Enregistrer",
+    "Record again": "Réenregistrer",
+    "Play before the note (m)": "Jouer avant la note (m)",
+    "Must be an audio data: URI.": "Doit être une URI data: audio.",
+});
+
+/* Recorder landing: voice notes (#992) */
+Object.assign(window.RBi18nLangs.fr, {
+    "Record a Roadbook with geotagged notes, photos and voice notes.": "Enregistrez un Roadbook avec des notes, des photos et des notes vocales géolocalisées.",
+    "Hold the microphone for a voice note: it plays before its note when you navigate.": "Maintenez le micro pour une note vocale : elle joue avant sa note pendant la navigation.",
+});
+
+/* The standard: a plain intro (#986) */
+Object.assign(window.RBi18nLangs.fr, {
+    "s1.lead": "<b>Un fichier, le roadbook entier.</b> Un <code>.rdbk</code> contient l’itinéraire, ses notes et tout ce qu’elles dessinent, pour que n’importe quelle app puisse l’ouvrir, le suivre et le garder — hors ligne, sur n’importe quel appareil, des années plus tard.",
+    "See an example": "Voir un exemple",
 });

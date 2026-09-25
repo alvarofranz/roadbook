@@ -238,7 +238,7 @@ describe('note blocks — the material around a note (#542)', () => {
     });
 
     it('the catalog is what every surface builds itself from', () => {
-        expect(RB.NOTE_BLOCKS.map((k) => k.id)).toEqual(['photo', 'ad', 'text']);
+        expect(RB.NOTE_BLOCKS.map((k) => k.id)).toEqual(['photo', 'ad', 'text', 'voice']);
         for (const k of RB.NOTE_BLOCKS) { expect(k.name, k.id).toBeTruthy(); expect(k.icon, k.id).toMatch(/^fa-/); }
         for (const k of RB.NOTE_BLOCKS.filter((x) => x.image)) expect(k.imageMax, k.id).toBeGreaterThan(0);
     });

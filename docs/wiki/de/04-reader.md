@@ -26,12 +26,7 @@ Ein Roadbook öffnet sich zuerst als **schreibgeschützte Vorschau**: die Notenl
 
 ## 2. Eine Fahrt starten
 
-**Navigieren** öffnet den Startdialog:
-
-| Option | Beschreibung |
-|--------|--------------|
-| **GPX-Track aufzeichnen** | Zeichnet den GPS-Track der Fahrt auf (absturzsicher) |
-| **Ton bei Notiz** | Eine Glocke bei jeder validierten Notiz, eine Fanfare bei der letzten. Sie spielt über deiner Musik, statt sie anzuhalten |
+**Navigieren** startet die Navigation sofort: kein Dialog, keine Optionen. Die Fahrt zeichnet immer ihren GPS-Track auf (absturzsicher): Der Track gehört zur Fahrt, und ihr Bericht trägt ihn mit, als Karte *Gefahrene Strecke* und als GPX zum Herunterladen. Bei jeder validierten Notiz ertönt eine Glocke, bei der letzten eine Fanfare, über deiner Musik, statt sie anzuhalten.
 
 Es gibt keinen Modus zu wählen: Ein Roadbook, das aus einer Veranstaltung geöffnet wird, die es **wertet**, läuft als **Wettbewerb** (deine Fahrzeugnummer wird abgefragt, Strafen gelten, das signierte Ergebnis geht in die Rangliste der Veranstaltung); alles andere läuft als **Tour**.
 
@@ -41,9 +36,9 @@ Es gibt keinen Modus zu wählen: Ein Roadbook, das aus einer Veranstaltung geöf
 
 Der Reader belegt den ganzen Bildschirm:
 
-1. **Kilometerzähler-Leiste** oben: Titel, Gesamt (*Prog.*) über Teilstrecke (*Teil.*), Kurs, Uhrzeit, GPS-Status und Geschwindigkeit
+1. **Kilometerzähler-Dashboard** als erste Zeile (ohne Titel): Gesamt (*Prog.*) über Teilstrecke (*Teil.*), Kurs, Uhrzeit, GPS-Status und Geschwindigkeit
 2. **Notenliste**: eine Zeile pro Notiz, in drei Spalten — Gesamt- und Teildistanz mit der Notiznummer (und ihrem Wegpunkttyp, falls vorhanden) · die Vignette · Text, CAP, Tempolimit und Koordinaten
-3. **Aktionsleiste** unten: Schalter **Auto** · **Karte zur Notiz** · **Pause** · GPX · **Fertig** · **Beenden**
+3. **Aktionsleiste** unten, zwei Reihen mit je zwei Knöpfen: Schalter **Auto** · **Karte zur Notiz**, dann **Pause** · **Fertig**
 
 Notenzustände: **erreicht** (grün) · **übersprungen** (rosa) · **aktiv** (roter Rand) · ausstehend (weiß). Beim Annähern an die aktive Notiz wird sie **blau** und zeigt die verbleibende Distanz, in km mit zwei Nachkommastellen.
 
@@ -51,6 +46,9 @@ Wird eine Notiz validiert, rückt die nächste **ganz nach oben** in der Liste: 
 
 ### Distanzen entlang der Route
 Die verbleibende Distanz wird **entlang der Straße** gemessen, wie die Teilstrecken des Roadbooks selbst, nicht in Luftlinie: Gefahrene Teilstrecke plus verbleibende Distanz ergibt immer die Teilstrecke der Notiz. Bei jedem Notenwechsel werden beide Kilometerzähler auf der Route neu verankert, sodass die Teilstrecke genau an der Notiz 0.00 zeigt.
+
+### Sprachnotizen
+Eine Notiz kann eine **Sprachnotiz** tragen (im Recorder per Gedrückthalten oder im Editor aufgenommen). Beim Navigieren spielt sie von selbst, wenn du dich der Notiz näherst — in dem Abstand, den ihr Autor gewählt hat, standardmäßig 100 m davor, entlang der Route gemessen. Jede spielt einmal pro Fahrt; sind mehrere gleichzeitig fällig, spielen sie nacheinander.
 
 ---
 
@@ -89,19 +87,18 @@ Nur wenn das Roadbook eine Karte erlaubt: **Karte zur Notiz** in der Aktionsleis
 
 ---
 
-## 6. Pause, fertig, beenden
+## 6. Pause und fertig
 
 | Knopf | Was er tut |
 |-------|------------|
 | **Pause** | Stoppt das GPS und die Bildschirmsperre-Verhinderung, um Akku zu sparen (eine Mittagspause); die Kilometerzähler laufen in der Pause nicht weiter |
-| **Fertig** | Schließt die Fahrt ab und öffnet ihren Bericht. Vor der letzten Notiz fragt er vorher: Nicht erreichte Notizen zählen als übersprungen |
-| **Beenden** (das Ausgangssymbol) | Verlässt die Fahrt ohne Bericht, nach einer Bestätigung |
+| **Fertig** | Der einzige Weg aus einer Fahrt: Schließt sie ab und öffnet ihren Bericht. Vor der letzten Notiz fragt er vorher: Nicht erreichte Notizen zählen als übersprungen |
 
 ---
 
 ## 7. Der Fahrtbericht
 
-Jede Fahrt endet mit ihrem **Bericht**: erreichte und übersprungene Notizen, Tempolimit-Zonen, Zeit und Distanz. Oben steht deine Fahrtkarte, darunter **Teilen** und ein einziger Schalter, um die Fahrt **Privat** zu halten oder **Öffentlich** zu machen (sichtbar auf deinem Profil `/u/<username>`). Teilen, bevor du gewählt hast, fragt vorher, denn Teilen macht die Fahrt öffentlich.
+Jede Fahrt endet mit ihrem **Bericht**: erreichte und übersprungene Notizen, Tempolimit-Zonen, Zeit und Distanz, dazu die **Gefahrene Strecke** auf einer Karte mit ihrem GPX zum Herunterladen. Oben steht deine Fahrtkarte, darunter **Teilen** und ein einziger Schalter, um die Fahrt **Privat** zu halten oder **Öffentlich** zu machen (sichtbar auf deinem Profil `/u/<username>`). Teilen, bevor du gewählt hast, fragt vorher, denn Teilen macht die Fahrt öffentlich.
 
 Der Bericht wird zuerst auf dem Gerät gespeichert und hochgeladen, sobald eine Verbindung besteht.
 
@@ -112,7 +109,7 @@ Eine Wettbewerbsfahrt erzeugt zusätzlich ein **HMAC-signiertes Ergebnis** (eine
 
 ## 8. Eine unterbrochene Sitzung wiederherstellen
 
-Die Fahrt sichert sich selbst auf dem Gerät. Wird sie unterbrochen (ein Anruf, ein Absturz, das Handy schließt die App), fragt der Reader beim nächsten Besuch **Laufende Fahrt fortsetzen?** und macht genau dort weiter, wo du warst. Ein laufender GPX-Mitschnitt wird genauso wiederhergestellt.
+Die Fahrt sichert sich selbst auf dem Gerät. Wird sie unterbrochen (ein Anruf, ein Absturz, das Handy schließt die App), fragt der Reader beim nächsten Besuch **Laufende Fahrt fortsetzen?** und macht genau dort weiter, wo du warst. Der bis dahin aufgezeichnete Track wird mit ihr wiederhergestellt.
 
 > Ablehnen löscht nichts, und die Frage kommt für diese Fahrt nicht wieder. Sie wird nie gestellt, wenn der Link ein anderes Roadbook nennt.
 

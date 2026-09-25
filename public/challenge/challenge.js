@@ -157,7 +157,10 @@
             if (!done.ok || !(done.runs.length || done.private)) { $('chCompletions').hidden = true; return; }
             const total = done.runs.length + done.private;
             $('chCompletionsCount').textContent = `(${total})`;
-            $('chCompletionList').innerHTML = done.runs.map((r) => `<a class="completion" href="/run/${r.id}">
+            // a run's page is served by the site (/run/<id>): its real address, which the app opens outside
+            // itself — the WebView has no such page (#990)
+            const runAttrs = (r) => `href="${esc(RBPublicLink('/run/' + r.id))}"` + (RBIsNativeApp() ? ' target="_blank" rel="noopener"' : '');
+            $('chCompletionList').innerHTML = done.runs.map((r) => `<a class="completion" ${runAttrs(r)}>
                     <img class="avatar avatar-sm" src="${r.avatar ? esc(RBMediaSrc(r.avatar)) : '/assets/icon.svg'}" alt="" loading="lazy">
                     <span class="grow"><b>@${esc(r.username)}</b><span class="muted small"> · ${r.notes_reached}/${r.notes_total} ${esc(t('notes'))} · ${esc(RBFmtDate(String(r.ended_at).slice(0, 10)))}</span></span>
                     <i class="fa-solid fa-chevron-right"></i>

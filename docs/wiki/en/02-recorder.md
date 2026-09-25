@@ -1,8 +1,8 @@
 # Roadbook Recorder — Record a live GPS track
 
-The **Recorder** is the tool to use **in the field**. It records the GPS track and lets you drop notes and geotagged photos along the way. The result is a draft that goes to the Editor to create the final roadbook.
+The **Recorder** is the tool to use **in the field**. It records the GPS track and lets you drop notes, geotagged photos and voice notes along the way. The result is a draft that goes to the Editor to become the final roadbook.
 
-> It works **100% offline** for GPS + waypoint + media. Media stays in a local queue until there's a network. A connection is only needed for: initial login, deferred upload, saving to profile.
+> It works **100% offline** for the GPS, the notes, the photos and the voice notes. Photos stay in a local queue until there's a network. A connection is only needed to sign in, to upload the photos and to save to your profile.
 
 ---
 
@@ -10,63 +10,61 @@ The **Recorder** is the tool to use **in the field**. It records the GPS track a
 
 ### 1. Open the Recorder
 
-Open the **Recorder** from the main menu or go directly to `/recorder/`.
+Open the **Recorder** from the tab bar (the ⏺ icon) or go directly to `/recorder/`.
 
 > ![Recorder start](../assets/screenshots/rec01.jpg)
 
-You'll see the start screen with the **Start recording** button. If you're not logged in, a notice appears: *"Not signed in: the route and its photos wait on this device, and Save asks you to sign in."* — you can still record.
+The start screen says what the Recorder does and shows the **GPS health** live: *Searching for GPS…*, *GPS too weak to record* or *GPS ready* with its accuracy (±m). **Start recording** opens only once the GPS is good enough to record, so a recording never begins blind. If you're not signed in, a notice says the route and its photos wait on your device and that Save asks you to sign in — you can still record.
+
+> **Admins** can start without waiting for the GPS (the button says so) — useful on a computer, which has none: every fix is kept whatever its accuracy, and a note with no fix at all drops where the map is centred.
 
 ---
 
-### 2. Start a new recording
+### 2. Start
 
-Tap **Start recording**.
-
-> ![Session name](../assets/screenshots/rec02.jpg)
-
-A modal opens for the session **name** (default: date/time `YYYY-MM-DD HH-MM`). You can change it. Tap **Confirm**.
+Tap **Start recording**. The recording starts at once: nothing to fill in — the roadbook gets its name later, in the Editor.
 
 ---
 
 ### 3. Live dashboard — recording in progress
 
-While recording, the screen shows four readouts at the top:
-
 > ![Recording dashboard](../assets/screenshots/rec03a.jpg)
+
+At the top, the status bar (clock · battery · GPS accuracy) and four readouts:
 
 | Element | What you see |
 |----------|--------------|
 | **Elapsed** | Recording duration (excluding pauses) |
 | **km/h** | Current speed |
 | **Notes** | Number of notes dropped |
-| **km** | Distance traveled |
+| **km** | Distance travelled |
 
-Below them come the capture buttons (step 4) and the live map (step 5). **Pause** and **End** sit in a bar at the bottom, half width each; on a phone that bar floats just above the bottom tab bar.
+Below them come the capture buttons (step 4) and the live map (step 5). **Pause** and **End** sit in a bar at the bottom, half width each; on a phone that bar floats just above the tab bar.
 
 ---
 
 ### 4. Enrich the track during the route
 
-The capture row has one big **Note** button on the left and, on its right, a 2×2 grid of icon buttons as tall as it:
+> ![Capture buttons](../assets/screenshots/rec04a.jpg)
+
+The capture row has three columns, as tall as each other: the big **Note** (40%), the captures (40%: **Photo** above **Voice note**) and the map's two switches (20%: **Map style** above **Heading up**).
 
 | Button | Action | How to use |
 |--------|--------|------------|
-| **📍 Note** | Drops a note at the current GPS position | Tap: the note is placed instantly (needs a GPS fix). A success bell sounds and a big green check appears on screen for under a second. There is nothing to type — the note's text is written later in the Editor |
-| **📷 Photo** | Takes a geotagged photo | Opens the rear camera. The photo is attached to the current GPS position and always drops a note there too |
-| **↩ Undo last note** | Removes the last note | Asks for confirmation first, naming the note it removes |
+| **📍 Note** | Drops a note at your GPS position | Tap: the note drops instantly. A success bell sounds and a big green check appears for under a second. Nothing to type — the note's text is written later in the Editor |
+| **📷 Photo** | Takes a geotagged photo | Opens the rear camera. The photo is pinned to your position and always drops a note there too |
+| **🎤 Voice note** | Records a voice note | **Hold it down** while you speak — a note drops right there and the button turns red with the seconds; **let go** and it stops (at most a minute). Only the sound is kept, no transcription: it becomes the note's **Voice note** extra and, when you navigate the roadbook, it plays by itself before you reach the note (100 m before, or the distance the author sets in the Editor) |
 | **🗺 Map style** | Switches the base map | Satellite ↔ topographic |
-| **🧭 Heading up** | Map orientation | The map turns with your course (heading up) or stays north up |
+| **➤ Heading up** | Map orientation | The map turns with your course (lit) or stays north up |
 
 The bottom bar holds the other two:
 
 | Button | Action |
 |--------|--------|
-| **⏸ Pause** | Suspends GPS and stopwatch (stops, waits). Tap again to resume |
+| **⏸ Pause** | Suspends the recording (stops, waits). Tap again to resume |
 | **🏁 End** | Ends the recording (step 6) |
 
-> ![Waypoint and media buttons](../assets/screenshots/rec04a.jpg)
-
-> **Tip**: tap **Note** at every junction, hazard or road change without taking your eyes off the road, and add the words later in the Editor. Use **Photo** for signs and visual points.
+> **Tip**: tap **Note** at every junction, hazard or change of road without taking your eyes off the road, and add the words later in the Editor. Hold **Voice note** when a few words say it better — they will play back to you on the road. There is no undo on the trail: a note dropped by mistake is deleted in a second in the Editor.
 
 ---
 
@@ -82,17 +80,17 @@ The bottom bar holds the other two:
 
 ---
 
-### 6. End recording
+### 6. End the recording
 
-Tap **End** (bottom bar) and confirm to end the recording.
+Tap **End** (bottom bar) and confirm.
 
-> ![Recording summary](../assets/screenshots/rec06a.jpeg)
+> ![End of the recording](../assets/screenshots/rec06a.jpg)
 
 A dialog shows a short summary (km · notes · photos) and asks one question, with two buttons:
 
 | Button | What happens |
 |--------|--------------|
-| **💾 Save** | Signed in: the recording is saved as a **draft** roadbook (with its photos) and the **Editor opens** on it straight away. Signed out: you're taken to the sign-in page and, once signed in, you come back and it is saved the same way, then the Editor opens |
+| **💾 Save** | Signed in: the recording is saved as a **draft** roadbook (with its photos and voice notes) and the **Editor opens** on it straight away. Signed out: you're taken to the sign-in page and, once signed in, you come back and it is saved the same way, then the Editor opens |
 | **🗑 Discard** | Asks for confirmation, naming what would be lost (track, notes, photos), then drops the recording |
 
 There are no export buttons here: exporting (GPX, `.rdbk`, PDF…) is done later from the Editor.
@@ -103,31 +101,23 @@ There are no export buttons here: exporting (GPX, `.rdbk`, PDF…) is done later
 
 ### 7. In the Editor
 
-The Editor opens with the track, the notes and the photos already loaded: give the roadbook a name, write the notes' text and export it if you want. The draft is saved and you'll also find it in **My roadbooks** from the main menu.
+The Editor opens with the track, the notes, the photos and the voice notes already in place: give the roadbook a name, write the notes' text, listen to a voice note in its note's **Voice note** tab (and set how many metres before the note it plays), and export it if you want. The draft is saved, and you'll also find it in **My roadbooks**.
 
-## Offline behavior
+## Offline behaviour
 
-| What | Logged in + online | Logged in + offline | Logged out |
+| What | Signed in + online | Signed in + offline | Signed out |
 |------|--------------------|---------------------|------------|
 | GPS track | ✅ local + checkpoint | ✅ local + checkpoint | ✅ local + checkpoint |
-| Notes | ✅ local | ✅ local | ✅ local |
+| Notes and voice notes | ✅ local | ✅ local | ✅ local |
 | Photos | ✅ queue → upload | ✅ local queue | ✅ local queue |
-| Server draft | created/updated live | created at first flush | created on **Save**, after sign-in |
-| Post-crash recovery | ✅ automatic | ✅ automatic | ✅ automatic |
+| Server draft | created/updated live | created at the first upload | created on **Save**, after sign-in |
+| Recovery after a crash | ✅ automatic | ✅ automatic | ✅ automatic |
 
 ---
 
 ## Interrupted session recovery
 
-The Recorder saves the session in real time. If the app closes (phone call, crash, battery), at the next launch it offers:
-
-1. **Resume** — resume recording from where you left off
-2. **GPX recovery** — if the session is lost, recover the orphan GPX track
-3. **Clean start** — ignore and restart
-
-> 📸 *Screenshot: interrupted session recovery modal*
-
-> Declining the resume **does not delete** the session: it is only overwritten when you start a new recording or exit with "End the trip".
+The Recorder saves the session in real time. If the app closes (a call, a crash, the battery), on the next launch it offers to **resume** the recording where you left it. Declining **does not delete** it: the recording stays on the device and is only replaced when you start a new one.
 
 ---
 
