@@ -498,7 +498,7 @@
 
         $('accName').textContent = ((user.first_name || '') + ' ' + (user.last_name || '')).trim() || user.username;
         $('accHandle').textContent = '@' + user.username + ' · ' + user.email;
-        $('accAvatar').src = user.avatar ? RBMediaSrc(user.avatar) : '../assets/icon.svg'; // the stored URL carries its upload version
+        $('accAvatar').src = user.avatar ? RBMediaSrc(user.avatar) : '../assets/brand/logo-minimal.webp'; // the stored URL carries its upload version
         $('accProfileLink').href = RBProfileLink(user.username);
         $('logoutBtn').onclick = RBSignOut;
         $('pfFirst').value = user.first_name || '';

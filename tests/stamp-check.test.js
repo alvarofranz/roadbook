@@ -33,7 +33,7 @@ describe('assetRefs', () => {
     });
 
     it('ignores references that are not a stamped asset kind', () => {
-        const html = '<a href="../standard/">spec</a><img src="../assets/icon.svg"><link rel="manifest" href="/manifest.webmanifest">';
+        const html = '<a href="../standard/">spec</a><img src="../assets/brand/logo-minimal.webp"><link rel="manifest" href="/manifest.webmanifest">';
         expect(assetRefs(html)).toEqual([]);
     });
 

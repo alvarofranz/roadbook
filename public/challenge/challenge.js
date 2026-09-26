@@ -87,7 +87,7 @@
         const commentHTML = (c) => {
             const profile = RBProfileLink(c.username);
             return `<article class="comment" data-id="${c.id}">
-                <a href="${profile}"><img class="avatar avatar-sm" src="${c.avatar ? esc(RBMediaSrc(c.avatar)) : '/assets/icon.svg'}" alt="" loading="lazy"></a>
+                <a href="${profile}"><img class="avatar avatar-sm" src="${c.avatar ? esc(RBMediaSrc(c.avatar)) : '/assets/brand/logo-minimal.webp'}" alt="" loading="lazy"></a>
                 <div class="grow comment-main">
                     <div class="comment-head">
                         <a href="${profile}"><b>@${esc(c.username)}</b></a>
@@ -161,7 +161,7 @@
             // itself — the WebView has no such page (#990)
             const runAttrs = (r) => `href="${esc(RBPublicLink('/run/' + r.id))}"` + (RBIsNativeApp() ? ' target="_blank" rel="noopener"' : '');
             $('chCompletionList').innerHTML = done.runs.map((r) => `<a class="completion" ${runAttrs(r)}>
-                    <img class="avatar avatar-sm" src="${r.avatar ? esc(RBMediaSrc(r.avatar)) : '/assets/icon.svg'}" alt="" loading="lazy">
+                    <img class="avatar avatar-sm" src="${r.avatar ? esc(RBMediaSrc(r.avatar)) : '/assets/brand/logo-minimal.webp'}" alt="" loading="lazy">
                     <span class="grow"><b>@${esc(r.username)}</b><span class="muted small"> · ${r.notes_reached}/${r.notes_total} ${esc(t('notes'))} · ${esc(RBFmtDate(String(r.ended_at).slice(0, 10)))}</span></span>
                     <i class="fa-solid fa-chevron-right"></i>
                 </a>`).join('')
