@@ -349,8 +349,10 @@ body.rb-immersive .app-chip-stack { display: none; }
 /* tool-page title + its "How it works" link, side by side (centred in the idle card, left-aligned on the editor landing) */
 /* One page-header pattern for every section: the title on the left, the "Info" link at the
    top-right of the same row. No big decorative icon, no centring — identical across sections. */
-.tool-titlebar { display: flex; align-items: baseline; justify-content: space-between; gap: .6rem 1rem; margin: .4rem 0 .8rem; }
-.tool-titlebar h1 { margin: 0; min-width: 0; }  /* let a long title wrap on its own line instead of pushing "Info" below it */
+.tool-titlebar { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .6rem 1rem; margin: .4rem 0 .8rem; }
+/* a long title wraps beside "Help"; only when not even a word of it would fit there — the phone's
+   large text (#1004) — does "Help" go under it, instead of the title breaking inside its words */
+.tool-titlebar h1 { margin: 0; flex: 1 1 5em; min-width: 0; }
 .tool-titlebar .tool-help { flex-shrink: 0; }   /* "Info" stays pinned at the top-right */
 
 /* ---------- tool pages ---------- */
@@ -499,7 +501,7 @@ body.rb-immersive .app-chip-stack { display: none; }
 /* the Reader's action bar (#936): two rows of two big buttons — Auto · Note map, then Pause ·
    Finish — easy to hit while driving; without a map, Auto takes its whole row */
 .fabrow { position: fixed; left: 0; right: 0; bottom: 0; z-index: 35; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; padding: .6rem .8rem; padding-bottom: calc(.6rem + env(safe-area-inset-bottom)); background: rgba(14, 17, 22, .95); border-top: 1px solid var(--line); }
-.fabrow .btn { justify-content: center; min-width: 0; min-height: 3.1rem; font-size: 1rem; white-space: nowrap; }
+.fabrow .btn { justify-content: center; min-width: 0; min-height: 3.1rem; font-size: 1rem; white-space: normal; line-height: 1.15; text-align: center; } /* a name too long for its half takes two lines — the phone's large text (#1004) */
 .fabrow:has(#mapBtn[hidden]) #autoBtn { grid-column: 1 / -1; }
 /* with the Live switch (#976): Auto · Live · Note map over Pause · Finish — or Auto · Live when there is no map */
 .fabrow:has(#liveBtn:not([hidden])) { grid-template-columns: repeat(6, minmax(0, 1fr)); }
@@ -553,7 +555,7 @@ body.rb-immersive .app-chip-stack { display: none; }
    (distance | vignette | comments). No buttons column: the whole row is the Reader's tap
    target and its map is one toggle in the action bar (#569), so the width goes to the text.
    The colour-coded state classes are set by the Reader only. */
-.nrow { display: grid; grid-template-columns: max(104px, calc(var(--dist-ch, 5) * 1.65ch + 1.2rem)) clamp(124px, 26vw, 178px) 1fr; /* the distance column: as wide as the list's longest total (#730) */ border-bottom: 1px solid #c9c9c9; min-height: 132px; background: #fff; color: #14110b; }
+.nrow { display: grid; grid-template-columns: max(104px, calc(var(--dist-ch, 5) * 1.65ch + 1.2rem)) clamp(124px, 26vw, 178px) minmax(0, 1fr); /* the distance column: as wide as the list's longest total (#730) */ border-bottom: 1px solid #c9c9c9; min-height: 132px; background: #fff; color: #14110b; }
 .nrow > div { padding: .45rem .5rem; border-right: 1px solid #d7d7d7; min-width: 0; }
 .nrow .col-text { border-right: 0; }
 .nrow .col-distance { display: flex; flex-direction: column; gap: .1rem; }
@@ -568,10 +570,20 @@ body.rb-immersive .app-chip-stack { display: none; }
 .nrow .col-distance.tight { background: #dbe7f2; } /* the next note is under 50 m ahead: a tight pair */
 .nrow .col-vignette { display: flex; align-items: center; justify-content: center; padding: .15rem; }
 .nrow .col-vignette svg { width: 100%; height: 100%; max-height: 130px; }
+/* A note row is distance | vignette | text, the text keeping at least 7em beside the other two; with
+   the phone's large text it can't, and drops under them at full width instead of squeezing to a
+   column a word wide and pushing the page sideways (#1004). The line between the vignette and the
+   text belongs to the text, so a text that dropped leaves no stray border behind. */
+.nrow:not(.block) { display: flex; flex-wrap: wrap; }
+.nrow:not(.block) .col-distance { flex: 0 0 max(104px, calc(var(--dist-ch, 5) * 1.65ch + 1.2rem)); min-width: max-content; } /* never narrower than its figures */
+.nrow:not(.block) .col-vignette { flex: 0 0 clamp(124px, 26vw, 178px); border-right: 0; }
+.nrow:not(.block) .col-text { flex: 1 1 7em; margin-left: -1px; border-left: 1px solid #d7d7d7; box-shadow: 0 -1px 0 #d7d7d7; } /* the -1px keeps the text exactly as wide as beside a vignette border */
 /* phones: give the tulip more room (it's the thing you read while driving) */
 @media (max-width: 600px) {
     /* the distance column fits a total and a partial at the Reader's size (#569) */
-    .nrow { grid-template-columns: max(92px, calc(var(--dist-ch, 5) * 1.65ch + 1rem)) minmax(140px, 40vw) 1fr; }
+    .nrow { grid-template-columns: max(92px, calc(var(--dist-ch, 5) * 1.65ch + 1rem)) minmax(140px, 40vw) minmax(0, 1fr); }
+    .nrow:not(.block) .col-distance { flex-basis: max(92px, calc(var(--dist-ch, 5) * 1.65ch + 1rem)); }
+    .nrow:not(.block) .col-vignette { flex-basis: max(140px, 40vw); }
     .nrow > div { padding-left: .4rem; padding-right: .4rem; }
     .nrow .col-vignette svg { max-height: 170px; }
 }
@@ -694,9 +706,11 @@ body.rb-immersive .app-chip-stack { display: none; }
    icon over the text; from a tablet up the icon sits beside it. Two per row, never an orphan: a
    grid of four (.choice-grid.four) goes four across only on a wide screen. `.row` is a full-width
    list row (in a dialog), `.center` a centred tile, `.compact` a small one. */
-.choice-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; }
+/* two across (four on a wide screen), and one when a card would be narrower than its words — the
+   minimum is in em, so it grows with the phone's large text (#1004) */
+.choice-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, max(9em, 40%)), 1fr)); gap: .8rem; }
 .choice-grid.stack { grid-template-columns: minmax(0, 1fr); gap: .5rem; }
-@media (min-width: 1100px) { .choice-grid.four { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (min-width: 1100px) { .choice-grid.four { grid-template-columns: repeat(auto-fit, minmax(min(100%, max(9em, 20%)), 1fr)); } }
 .choice-card { display: flex; flex-direction: column; align-items: flex-start; gap: .25rem; min-width: 0; padding: 1.1rem; border: 1px solid var(--line); border-radius: var(--radius); background: linear-gradient(155deg, var(--card-2), var(--card)); color: var(--text); font: inherit; text-align: left; text-decoration: none; cursor: pointer; transition: border-color .15s ease, transform .15s ease, background .15s ease; }
 .choice-card:hover, .choice-card:focus-visible { border-color: var(--sand); transform: translateY(-2px); text-decoration: none; background: linear-gradient(155deg, #273142, var(--card-2)); }
 .choice-card > i:first-child { display: inline-grid; place-items: center; flex: none; width: 3rem; height: 3rem; margin-bottom: .55rem; border-radius: 14px; font-size: 1.3rem; color: var(--sand); background: rgba(232, 176, 89, .12); border: 1px solid rgba(232, 176, 89, .3); transition: background .15s ease, color .15s ease, border-color .15s ease; }
@@ -813,11 +827,15 @@ select.modal-in { width: auto; margin: 0; padding: .4rem; border-radius: 8px; }
    platform, running release and available release read at a glance. */
 .app-info-card h2 { display: flex; align-items: center; gap: .5rem; margin-bottom: .9rem; }
 .app-info-card h2 i { color: var(--sand); }
-.app-info-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
-.app-info-table td { padding: .45rem 0; border-top: 1px solid var(--line); vertical-align: top; }
-.app-info-table tr:first-child td { border-top: 0; }
-.app-info-table td:first-child { color: var(--muted); white-space: nowrap; }
-.app-info-table td:last-child { text-align: right; font-weight: 700; word-break: break-word; }
+/* one fact per row: the value beside its label while it fits, on its own line under it when it does
+   not — with the phone's large text a table squeezed the value to one letter wide, read letter by
+   letter down the card (#1004). A value breaks inside a word only when that word is wider than the
+   whole card. */
+.app-info-facts { font-size: .9rem; }
+.app-info-fact { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .1rem .75rem; padding: .45rem 0; border-top: 1px solid var(--line); }
+.app-info-fact:first-child { border-top: 0; }
+.app-info-fact span { color: var(--muted); }
+.app-info-fact b { margin-left: auto; min-width: 0; text-align: right; overflow-wrap: anywhere; }
 /* where this copy stands (RBReleaseStatusHTML): App Info and the About page */
 .release-status { display: flex; gap: .55rem; align-items: flex-start; margin: 0 0 .9rem; padding: .65rem .8rem; border-radius: 10px; font-size: .9rem; line-height: 1.45; background: var(--card-2); color: var(--muted); }
 .release-status i { margin-top: .2rem; }
@@ -1047,9 +1065,11 @@ select.modal-in { width: auto; margin: 0; padding: .4rem; border-radius: 8px; }
 /* ---------- shared GPS status bar (RBStatusBar): clock · battery · satellite/GPS ---------- */
 /* shared status row (Recorder + Tripmaster): clock · battery · GPS. A full-width bar with its own
    background and a bottom rule — capped, it read as a strip with its sides cut off (#728) */
-.status-bar { position: sticky; top: env(safe-area-inset-top); z-index: 30; display: grid; grid-template-columns: repeat(3, 1fr); background: var(--card); border-bottom: 1px solid var(--line); }
+/* three equal cells; a cell never shrinks below its reading — with the phone's large text the last
+   one takes a second line rather than running off the screen (#1004) */
+.status-bar { position: sticky; top: env(safe-area-inset-top); z-index: 30; display: flex; flex-wrap: wrap; background: var(--card); border-bottom: 1px solid var(--line); }
 .status-bar .status-cell + .status-cell { border-left: 1px solid var(--line); }
-.status-bar .status-cell { display: flex; align-items: center; justify-content: center; gap: .3rem; min-width: 0; padding: .85rem .2rem; font-size: clamp(1.15rem, 5.5vw, 1.6rem); font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.status-bar .status-cell { flex: 1 1 0; min-width: max-content; display: flex; align-items: center; justify-content: center; gap: .3rem; padding: .85rem .2rem; font-size: clamp(1.15rem, 5.5vw, 1.6rem); font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .status-bar .status-cell i { font-size: clamp(.95rem, 4vw, 1.25rem); color: var(--muted); }
 .status-bar .status-cell.ok i, .status-bar .status-cell.ok span { color: var(--ok); }
 .status-bar .status-cell.mid i, .status-bar .status-cell.mid span { color: var(--warn); }

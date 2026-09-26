@@ -119,8 +119,8 @@ describe('the Editor start offers four ways, recording first (#808 · #979)', ()
         expect(ways).toEqual(['../recorder/', 'loadGpx', 'drawRoute', 'loadJson']);
         const css = read('public/assets/css/app.css');
         // two per row, four only on a wide screen — never three and an orphan
-        expect(css).toContain('.choice-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; }');
-        expect(css).toContain('@media (min-width: 1100px) { .choice-grid.four { grid-template-columns: repeat(4, minmax(0, 1fr)); } }');
+        expect(css).toContain('.choice-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, max(9em, 40%)), 1fr)); gap: .8rem; }'); // two across, one with large text (#1004)
+        expect(css).toContain('@media (min-width: 1100px) { .choice-grid.four { grid-template-columns: repeat(auto-fit, minmax(min(100%, max(9em, 20%)), 1fr)); } }');
         expect(css).not.toContain('.choice-card::after'); // no arrow
         expect(css).toContain('.choice-card > i:first-child { display: inline-grid; place-items: center;'); // the icon in its tinted square
     });

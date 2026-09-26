@@ -9,9 +9,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.18-244">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.18-245">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.18-244">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.18-245">
     <style>
         .ed-row { display: flex; gap: .5rem; align-items: center; margin: .25rem 0; flex-wrap: wrap; }
         /* soft edit lock (#154): the read-only strip above the actions */
@@ -68,7 +68,7 @@
         .wp-dd-opt .wp-dd-nm { color: var(--muted); font-size: .82rem; }
         /* The note's own parameters, under the palette: label over control, in even columns so
            the six of them read as one block instead of a ragged wrapping row. */
-        .note-params { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: .5rem .6rem; margin: .5rem 0 .25rem; }
+        .note-params { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 9em), 1fr)); gap: .5rem .6rem; margin: .5rem 0 .25rem; } /* em: one per row with the phone's large text (#1004) */
         .note-params > span { min-width: 0; }
         /* every control in the block the same height and the full width of its cell (#696) */
         .note-params .field { width: 100%; min-height: 2.2rem; padding: .3rem .45rem; font-size: .92rem; }
@@ -607,22 +607,22 @@
 
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../assets/js/config.js?v=1.9.18-244"></script>
-<script src="../assets/js/roadbook-core.js?v=1.9.18-244"></script>
-<script src="../assets/js/rbzip.js?v=1.9.18-244"></script>
-<script src="../assets/js/rbmap.js?v=1.9.18-244"></script>
-<script src="../assets/js/cover-map.js?v=1.9.18-244"></script>
-<script src="../assets/js/note-canvas.js?v=1.9.18-244"></script>
-<script src="../assets/js/rb-pdf.js?v=1.9.18-244"></script>
-<script src="../assets/js/challenges.js?v=1.9.18-244"></script>
-<script src="../assets/js/rb-media-queue.js?v=1.9.18-244"></script>
-<script src="../assets/js/i18n.es.js?v=1.9.18-244"></script>
-<script src="../assets/js/i18n.it.js?v=1.9.18-244"></script>
-<script src="../assets/js/i18n.de.js?v=1.9.18-244"></script>
-<script src="../assets/js/i18n.fr.js?v=1.9.18-244"></script>
-<script src="../assets/js/i18n.js?v=1.9.18-244"></script>
-<script src="../assets/js/app.js?v=1.9.18-244"></script>
-<script src="../assets/js/rb-voice.js?v=1.9.18-244"></script>
-<script src="editor.js?v=1.9.18-244"></script>
+<script src="../assets/js/config.js?v=1.9.18-245"></script>
+<script src="../assets/js/roadbook-core.js?v=1.9.18-245"></script>
+<script src="../assets/js/rbzip.js?v=1.9.18-245"></script>
+<script src="../assets/js/rbmap.js?v=1.9.18-245"></script>
+<script src="../assets/js/cover-map.js?v=1.9.18-245"></script>
+<script src="../assets/js/note-canvas.js?v=1.9.18-245"></script>
+<script src="../assets/js/rb-pdf.js?v=1.9.18-245"></script>
+<script src="../assets/js/challenges.js?v=1.9.18-245"></script>
+<script src="../assets/js/rb-media-queue.js?v=1.9.18-245"></script>
+<script src="../assets/js/i18n.es.js?v=1.9.18-245"></script>
+<script src="../assets/js/i18n.it.js?v=1.9.18-245"></script>
+<script src="../assets/js/i18n.de.js?v=1.9.18-245"></script>
+<script src="../assets/js/i18n.fr.js?v=1.9.18-245"></script>
+<script src="../assets/js/i18n.js?v=1.9.18-245"></script>
+<script src="../assets/js/app.js?v=1.9.18-245"></script>
+<script src="../assets/js/rb-voice.js?v=1.9.18-245"></script>
+<script src="editor.js?v=1.9.18-245"></script>
 </body>
 </html>

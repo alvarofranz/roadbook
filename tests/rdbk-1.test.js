@@ -92,7 +92,7 @@ describe('the contact page', () => {
     it('the privacy line right under the form, and the six topics in two full rows', () => {
         expect(page).not.toContain('contact.h.email');
         expect(page).toContain('<p class="contact-legal" data-i18n-html="contact.more">');
-        expect(page).toContain('@media (min-width: 620px) { .contact-topics { grid-template-columns: repeat(3, minmax(0, 1fr)); } }');
+        expect(page).toContain('@media (min-width: 620px) { .contact-topics { grid-template-columns: repeat(auto-fit, minmax(min(100%, max(8em, 30%)), 1fr)); } }');
         expect(page.match(/name="topic" value=/g)).toHaveLength(6);
     });
 });

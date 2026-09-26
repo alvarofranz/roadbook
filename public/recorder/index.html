@@ -9,9 +9,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.18-244">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.18-245">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.18-244">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.18-245">
     <style>
         .rec-main { max-width: 560px; padding-top: 1rem; }
         /* the landing (#896): three short points, then one big, inviting Start */
@@ -44,8 +44,8 @@
         /* the capture row (#768 · #992): the big Note (40%) — the button pressed while riding —, the
            captures beside it (40%: Photo over Voice note) and the map's two switches (20%: style over
            course-up), every column as tall as the Note */
-        .rec-capture { display: grid; grid-template-columns: 2fr 2fr 1fr; gap: .45rem; height: 7.2rem; }
-        .rec-note { height: 100%; min-width: 0; justify-content: center; font-size: 1.6rem; font-weight: 800; border-radius: 16px; }
+        .rec-capture { display: grid; grid-template-columns: 2fr 2fr 1fr; gap: .45rem; min-height: 7.2rem; } /* taller only when its words need it — the phone's large text (#1004) */
+        .rec-note { height: 100%; min-width: 0; flex-wrap: wrap; justify-content: center; align-content: center; font-size: 1.6rem; font-weight: 800; border-radius: 16px; } /* the pin over the word when both no longer fit side by side (#1004) */
         .rec-col { display: grid; grid-template-rows: 1fr 1fr; gap: .45rem; min-width: 0; }
         .rec-col .btn { height: 100%; min-width: 0; padding: 0; justify-content: center; font-size: 1.15rem; border-radius: 12px; }
         .rec-col .btn.on { background: var(--sand); color: var(--on-sand); border-color: var(--sand); }
@@ -152,21 +152,21 @@
 <input id="recPhotoFile" type="file" accept="image/*" capture="environment" hidden>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../assets/js/config.js?v=1.9.18-244"></script>
-<script src="../assets/js/roadbook-core.js?v=1.9.18-244"></script>
-<script src="../assets/js/rbmap.js?v=1.9.18-244"></script>
-<script src="../assets/js/gps-meter.js?v=1.9.18-244"></script>
-<script src="../assets/js/rb-remote.js?v=1.9.18-244"></script>
-<script src="../assets/js/gpx-recorder.js?v=1.9.18-244"></script>
-<script src="../assets/js/i18n.es.js?v=1.9.18-244"></script>
-<script src="../assets/js/i18n.it.js?v=1.9.18-244"></script>
-<script src="../assets/js/i18n.de.js?v=1.9.18-244"></script>
-<script src="../assets/js/i18n.fr.js?v=1.9.18-244"></script>
-<script src="../assets/js/i18n.js?v=1.9.18-244"></script>
-<script src="../assets/js/app.js?v=1.9.18-244"></script>
-<script src="../assets/js/rb-media-queue.js?v=1.9.18-244"></script>
-<script src="../assets/js/status-bar.js?v=1.9.18-244"></script>
-<script src="../assets/js/rb-voice.js?v=1.9.18-244"></script>
-<script src="recorder.js?v=1.9.18-244"></script>
+<script src="../assets/js/config.js?v=1.9.18-245"></script>
+<script src="../assets/js/roadbook-core.js?v=1.9.18-245"></script>
+<script src="../assets/js/rbmap.js?v=1.9.18-245"></script>
+<script src="../assets/js/gps-meter.js?v=1.9.18-245"></script>
+<script src="../assets/js/rb-remote.js?v=1.9.18-245"></script>
+<script src="../assets/js/gpx-recorder.js?v=1.9.18-245"></script>
+<script src="../assets/js/i18n.es.js?v=1.9.18-245"></script>
+<script src="../assets/js/i18n.it.js?v=1.9.18-245"></script>
+<script src="../assets/js/i18n.de.js?v=1.9.18-245"></script>
+<script src="../assets/js/i18n.fr.js?v=1.9.18-245"></script>
+<script src="../assets/js/i18n.js?v=1.9.18-245"></script>
+<script src="../assets/js/app.js?v=1.9.18-245"></script>
+<script src="../assets/js/rb-media-queue.js?v=1.9.18-245"></script>
+<script src="../assets/js/status-bar.js?v=1.9.18-245"></script>
+<script src="../assets/js/rb-voice.js?v=1.9.18-245"></script>
+<script src="recorder.js?v=1.9.18-245"></script>
 </body>
 </html>
