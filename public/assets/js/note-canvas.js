@@ -297,7 +297,8 @@ function r1(n) { return Math.round(n); }
 function clampIconSize(n) { return Math.max(10, Math.min(120, n)); }
 
 /* The paper note rows of a roadbook — ONE renderer for the Reader and the public roadbook page
-   (#635): distance column (total · partial · number + FIA waypoint badge), the vignette, and the comments with the CAP (+ its FIA qualifier), the speed limit and
+   (#635): the FIA distance column (#1008: the total big and centred, the partial boxed in the
+   bottom-left corner, the FIA waypoint badge, the note number small in the bottom-right), the vignette, and the comments with the CAP (+ its FIA qualifier), the speed limit and
    the coordinates; the material a note carries (#542) is drawn around its row. Only note rows
    carry data-i, so a tap on a photo or text block is never taken for a note.
    opts: iconBase (the standard palette's path), rowClass(i) → extra classes (the Reader's run
@@ -322,7 +323,7 @@ window.NoteCanvas.rowsHTML = function (rb, opts) {
         const speed = n.speed_limit_kmh != null ? `<div class="note-speed">${n.speed_limit_kmh === 0 ? `<span class="lim lifted">${esc(t('END'))}</span>` : `<span class="lim">${n.speed_limit_kmh}</span>`}</div>` : '';
         const extra = o.rowClass ? o.rowClass(i) : '';
         return `${blocks(n, 'before')}<div class="nrow${extra ? ' ' + extra : ''}" data-i="${i}">
-                <div class="col-distance${tight}"><div class="total">${km(n.distance)}</div><div class="partial">+${km(n.partial_distance)}</div><div class="num-row"><span class="num">${n.num}</span>${RB.wpBadgeSVG(n.waypoint_type, 22)}</div></div>
+                <div class="col-distance${tight}"><div class="total">${km(n.distance)}</div><div class="distance-foot"><span class="partial">${km(n.partial_distance)}</span>${RB.wpBadgeSVG(n.waypoint_type, 22)}<span class="num">${n.num}</span></div></div>
                 <div class="col-vignette">${window.NoteCanvas.toSVG(n, symbolSrc, RB.tulipContext(rb, i))}</div>
                 <div class="col-text"><div class="text">${esc(n.text || '')}</div>${cap}${speed}<div class="coords">${(+n.lat).toFixed(5)}, ${(+n.lon).toFixed(5)}</div></div>
             </div>${blocks(n, 'after')}${o.after ? o.after(i) : ''}`;
