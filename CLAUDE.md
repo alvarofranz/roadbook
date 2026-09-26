@@ -212,6 +212,13 @@ DB/Convenzioni rapide below have counterparts there).
   breaks (`overflow-wrap: break-word`), a grid item that holds a title carries `min-width: 0`,
   and wide content (tables, code) scrolls INSIDE its own box (#480). Pinned by
   `tests/ui-contracts.test.js`.
+- **The phone's large text reflows every layout (#1004).** Android's font size scales every text in
+  the app's WebView — px sizes included — while boxes sized in px or rem stay put, so App Info read
+  its values one letter per line. A minimum that decides a layout is in **em** (a grid column
+  `minmax(min(100%, max(9em, 40%)), 1fr)`, a title's `flex: 1 1 5em`), a row that may not fit
+  **wraps** (`flex-wrap`), a height that holds text is a `min-height`, and a value is never allowed
+  to break anywhere beside a label that won't wrap. At the default size nothing changes; pinned by
+  `tests/large-text.test.js`.
 - **The page never zooms — only the maps do (#933).** Every page's viewport meta carries
   `maximum-scale=1, user-scalable=no`, `app.css` gives every element `touch-action: manipulation`
   (no double-tap zoom) and `app.js` refuses iOS Safari's pinch (`gesturestart`) outside a MapLibre

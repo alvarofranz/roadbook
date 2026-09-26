@@ -318,11 +318,11 @@
     window.showAppInfo = async function () {
         const { facts, status } = await RBReleaseFacts();
         const storeUrl = status.kind === 'store' ? RBStore[RBDevice() === 'ios' ? 'ios' : 'android'] : null;
-        const row = ([label, value]) => `<tr><td>${RBesc(RBt(label))}</td><td>${RBesc(value)}</td></tr>`;
+        const row = ([label, value]) => `<div class="app-info-fact"><span>${RBesc(RBt(label))}</span><b>${RBesc(value)}</b></div>`;
         const modal = RBModal(`<div class="app-info-card">
             <h2><i class="fa-solid fa-circle-info"></i> ${RBt('App Info')}</h2>
             ${RBReleaseStatusHTML(status)}
-            <table class="app-info-table">${facts.map(row).join('')}</table>
+            <div class="app-info-facts">${facts.map(row).join('')}</div>
             <div class="btnrow spaced">
                 ${storeUrl ? `<a class="btn btn-primary" href="${storeUrl}" target="_blank" rel="noopener"><i class="fa-solid fa-rotate"></i> ${RBt('Update')}</a>` : ''}
                 ${status.kind === 'refresh' ? `<button class="btn btn-primary" id="appInfoUpdate"><i class="fa-solid fa-rotate"></i> ${RBt('Update')}</button>` : ''}

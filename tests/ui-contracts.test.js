@@ -309,7 +309,7 @@ describe('app info says honestly what this copy is and whether it is current (#4
 
     it('styles the card with classes, never an inline style attribute', () => {
         expect(fn).not.toMatch(/style="/);
-        for (const cls of ['app-info-card', 'app-info-table', 'app-info-foot']) {
+        for (const cls of ['app-info-card', 'app-info-facts', 'app-info-fact', 'app-info-foot']) {
             expect(read('public/assets/css/app.css'), cls).toContain('.' + cls);
         }
     });
