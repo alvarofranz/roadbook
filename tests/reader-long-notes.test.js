@@ -5,9 +5,11 @@ import fs from 'fs';
 const read = (p) => fs.readFileSync(p, 'utf8');
 
 describe('long notes in the Reader (#759)', () => {
-    it('puts the note to drive to at the very top of the list, its own material first (#844)', () => {
+    it('keeps the list one note behind: the note just done on top, the note to drive to under it (#1006)', () => {
         const reader = read('public/reader/reader.js');
         const scroll = reader.match(/function scrollActiveIntoView\(\) \{([\s\S]*?)\n {4}\}/)[1];
+        expect(scroll).toContain('let top = list.querySelector(`.nrow[data-i="${activeIdx - 1}"]`);');
+        // at the start nothing is behind: the first note on top, its own material first
         expect(scroll).toContain("while (top.previousElementSibling && top.previousElementSibling.classList.contains('block')) top = top.previousElementSibling;");
         expect(scroll).toContain('top.getBoundingClientRect().top - list.getBoundingClientRect().top + list.scrollTop');
     });

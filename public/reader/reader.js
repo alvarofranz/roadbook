@@ -478,14 +478,19 @@
         tripPartialM = 0;
     }
     let lastScrollIdx = -1;
-    // Advancing puts the note to drive to at the very TOP of the list (#844): the one just
-    // validated is done with, and the road ahead gets all the room. The material placed before a
-    // note (#542) belongs to it, so the top is its first block. Once the active index changes only.
+    // Advancing keeps the list ONE note behind (#1006): the note just done stays on top, so the rider
+    // can check what the last step was, and the note to drive to comes right under it — after an
+    // automatic validation as after a manual one. At the start there is nothing behind, so the first
+    // note is on top, with the material placed before it (#542), which belongs to it. Once the active
+    // index changes only.
     function scrollActiveIntoView() {
         const list = $('noteList');
-        let top = list.querySelector('.nrow.active');
-        if (!top) return;
-        while (top.previousElementSibling && top.previousElementSibling.classList.contains('block')) top = top.previousElementSibling;
+        let top = list.querySelector(`.nrow[data-i="${activeIdx - 1}"]`);
+        if (!top) {
+            top = list.querySelector('.nrow.active');
+            if (!top) return;
+            while (top.previousElementSibling && top.previousElementSibling.classList.contains('block')) top = top.previousElementSibling;
+        }
         list.scrollTo({ top: Math.max(0, top.getBoundingClientRect().top - list.getBoundingClientRect().top + list.scrollTop), behavior: 'smooth' });
     }
     function renderNotes() {
