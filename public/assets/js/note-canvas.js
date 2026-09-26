@@ -116,9 +116,9 @@ window.NoteCanvas = class NoteCanvas {
             g.addEventListener('pointerdown', (e) => this._startDrag(e, (vx, vy) => { const m = this.toM(vx, vy); ic.position = [r1(m[0]), r1(m[1])]; }, { type: 'icon', i }));
             this.svg.appendChild(g);
             if (this.sel && this.sel.type === 'icon' && this.sel.i === i) {
-                this.svg.appendChild(svg('rect', { class: 'vignette-box-dyn', x: cxi - s / 2, y: cyi - s / 2, width: s, height: s, fill: 'none', stroke: '#e8b059', 'stroke-width': 1.2, 'stroke-dasharray': '3 2', transform: `rotate(${ic.angle || 0} ${cxi} ${cyi})`, 'pointer-events': 'none' }));
+                this.svg.appendChild(svg('rect', { class: 'vignette-box-dyn', x: cxi - s / 2, y: cyi - s / 2, width: s, height: s, fill: 'none', stroke: '#ff7a1a', 'stroke-width': 1.2, 'stroke-dasharray': '3 2', transform: `rotate(${ic.angle || 0} ${cxi} ${cyi})`, 'pointer-events': 'none' }));
                 // drag the corner to resize (rotation-invariant; the +/- buttons still work too)
-                const rh = svg('rect', { class: 'vignette-box-dyn vignette-resize-handle', x: cxi + s / 2 - 5, y: cyi + s / 2 - 5, width: 10, height: 10, rx: 2, fill: '#5aa9ff', stroke: '#0e1116', 'stroke-width': 1.5 });
+                const rh = svg('rect', { class: 'vignette-box-dyn vignette-resize-handle', x: cxi + s / 2 - 5, y: cyi + s / 2 - 5, width: 10, height: 10, rx: 2, fill: '#5aa9ff', stroke: '#101313', 'stroke-width': 1.5 });
                 rh.addEventListener('pointerdown', (e) => this._startDrag(e, (vx, vy) => { ic.size = clampIconSize(r1(Math.hypot(vx - cxi, vy - cyi) * Math.SQRT2)); }, null));
                 this.svg.appendChild(rh);
             }
@@ -126,11 +126,11 @@ window.NoteCanvas = class NoteCanvas {
         // validation point: a small open circle where the trunk segments meet (the note's exact
         // spot), drawn LAST so junction vectors and centre-placed icons never hide it (#142);
         // pointer-inert so it never steals a tap from the drag handles underneath.
-        { const [vcx, vcy] = this.toV(0, 0); this.svg.appendChild(svg('circle', { class: 'vignette-box-dyn', cx: vcx, cy: vcy, r: 6, fill: '#fff', stroke: '#0e1116', 'stroke-width': 2.5, 'pointer-events': 'none' })); }
+        { const [vcx, vcy] = this.toV(0, 0); this.svg.appendChild(svg('circle', { class: 'vignette-box-dyn', cx: vcx, cy: vcy, r: 6, fill: '#fff', stroke: '#101313', 'stroke-width': 2.5, 'pointer-events': 'none' })); }
         this._toolbar();
     }
     _handle(vx, vy, onMove) {
-        const h = svg('circle', { class: 'vignette-box-dyn vignette-drag-handle', cx: vx, cy: vy, r: 6, fill: '#e8b059', stroke: '#0e1116', 'stroke-width': 1.5 });
+        const h = svg('circle', { class: 'vignette-box-dyn vignette-drag-handle', cx: vx, cy: vy, r: 6, fill: '#ff7a1a', stroke: '#101313', 'stroke-width': 1.5 });
         h.addEventListener('pointerdown', (e) => this._startDrag(e, onMove, null));
         this.svg.appendChild(h);
     }
@@ -220,7 +220,7 @@ window.NoteCanvas.toSVG = function (note, resolveIcon, ctx) {
     });
     // validation point: a small open circle where the trunk segments meet (the note's exact spot),
     // drawn LAST so junction vectors and centre-placed icons never hide it (#142)
-    s += `<circle cx="${cx}" cy="${cy}" r="6" fill="#fff" stroke="#0e1116" stroke-width="2.5"/>`;
+    s += `<circle cx="${cx}" cy="${cy}" r="6" fill="#fff" stroke="#101313" stroke-width="2.5"/>`;
     // Danger marks carry their own presentation attributes so the SVG is fully
     // self-contained (renders identically standalone — PDF — and inside the DOM).
     const danger = dangerMarks(note);
@@ -297,7 +297,8 @@ function r1(n) { return Math.round(n); }
 function clampIconSize(n) { return Math.max(10, Math.min(120, n)); }
 
 /* The paper note rows of a roadbook — ONE renderer for the Reader and the public roadbook page
-   (#635): distance column (total · partial · number + FIA waypoint badge), the vignette, and the comments with the CAP (+ its FIA qualifier), the speed limit and
+   (#635): the FIA distance column (#1008: the total big and centred, the partial boxed in the
+   bottom-left corner, the FIA waypoint badge, the note number small in the bottom-right), the vignette, and the comments with the CAP (+ its FIA qualifier), the speed limit and
    the coordinates; the material a note carries (#542) is drawn around its row. Only note rows
    carry data-i, so a tap on a photo or text block is never taken for a note.
    opts: iconBase (the standard palette's path), rowClass(i) → extra classes (the Reader's run
@@ -322,7 +323,7 @@ window.NoteCanvas.rowsHTML = function (rb, opts) {
         const speed = n.speed_limit_kmh != null ? `<div class="note-speed">${n.speed_limit_kmh === 0 ? `<span class="lim lifted">${esc(t('END'))}</span>` : `<span class="lim">${n.speed_limit_kmh}</span>`}</div>` : '';
         const extra = o.rowClass ? o.rowClass(i) : '';
         return `${blocks(n, 'before')}<div class="nrow${extra ? ' ' + extra : ''}" data-i="${i}">
-                <div class="col-distance${tight}"><div class="total">${km(n.distance)}</div><div class="partial">+${km(n.partial_distance)}</div><div class="num-row"><span class="num">${n.num}</span>${RB.wpBadgeSVG(n.waypoint_type, 22)}</div></div>
+                <div class="col-distance${tight}"><div class="total">${km(n.distance)}</div><div class="distance-foot"><span class="partial">${km(n.partial_distance)}</span>${RB.wpBadgeSVG(n.waypoint_type, 22)}<span class="num">${n.num}</span></div></div>
                 <div class="col-vignette">${window.NoteCanvas.toSVG(n, symbolSrc, RB.tulipContext(rb, i))}</div>
                 <div class="col-text"><div class="text">${esc(n.text || '')}</div>${cap}${speed}<div class="coords">${(+n.lat).toFixed(5)}, ${(+n.lon).toFixed(5)}</div></div>
             </div>${blocks(n, 'after')}${o.after ? o.after(i) : ''}`;

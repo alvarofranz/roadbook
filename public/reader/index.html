@@ -3,15 +3,15 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#0e1116">
+    <meta name="theme-color" content="#101313">
     <title>Roadbook Reader · RDBK.app</title>
     <meta name="robots" content="noindex">
-    <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
+    <link rel="icon" href="../assets/brand/favicon-trail.png" type="image/png" sizes="96x96">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.18-246">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.18-249">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.18-246">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.18-249">
     <style>
         /* top bar, laid out like a note row (#567): the distances on the LEFT — prog. with part. right
            under it, as every row shows total over partial — and the indicators to the right: bearing ·
@@ -38,8 +38,8 @@
         /* note rows use the shared white "paper" .nrow grid (app.css); the per-note states
            (done/skipped/active + the live near/arriving) are toggled by reader.js */
         #noteList { background: #fff; color: #14110b; }
-        /* larger per-note readouts: partial km just under the total, coordinates legible */
-        #noteList .col-distance .partial { font-size: 1.6rem; }
+        /* larger per-note readouts: the boxed partial read at arm's length, coordinates legible */
+        #noteList .col-distance .partial { font-size: 1.3rem; }
         #noteList .col-text .coords { font-size: .9rem; }
         .nmap { position: relative; background: #fff; border-bottom: 1px solid #c9c9c9; padding: 4px; }
         /* the note's number + distance to go, over the map's free top-left corner (#571) */
@@ -238,26 +238,26 @@
 
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../assets/js/config.js?v=1.9.18-246"></script>
-<script src="../assets/js/roadbook-core.js?v=1.9.18-246"></script>
-<script src="../assets/js/rbzip.js?v=1.9.18-246"></script>
-<script src="../assets/js/rbmap.js?v=1.9.18-246"></script>
-<script src="../assets/js/gps-meter.js?v=1.9.18-246"></script>
-<script src="../assets/js/gpx-recorder.js?v=1.9.18-246"></script>
-<script src="../assets/js/rb-remote.js?v=1.9.18-246"></script>
-<script src="../assets/js/note-canvas.js?v=1.9.18-246"></script>
-<script src="../assets/js/qrcode.min.js?v=1.9.18-246"></script>
-<script src="../assets/js/rb-qr.js?v=1.9.18-246"></script>
-<script src="../assets/js/challenges.js?v=1.9.18-246"></script>
-<script src="../assets/js/i18n.es.js?v=1.9.18-246"></script>
-<script src="../assets/js/i18n.it.js?v=1.9.18-246"></script>
-<script src="../assets/js/i18n.de.js?v=1.9.18-246"></script>
-<script src="../assets/js/i18n.fr.js?v=1.9.18-246"></script>
-<script src="../assets/js/i18n.js?v=1.9.18-246"></script>
-<script src="../assets/js/app.js?v=1.9.18-246"></script>
-<script src="../assets/js/run-report.js?v=1.9.18-246"></script>
-<script src="../assets/js/cover-map.js?v=1.9.18-246"></script>
-<script src="../assets/js/run-card.js?v=1.9.18-246"></script>
-<script src="reader.js?v=1.9.18-246"></script>
+<script src="../assets/js/config.js?v=1.9.18-249"></script>
+<script src="../assets/js/roadbook-core.js?v=1.9.18-249"></script>
+<script src="../assets/js/rbzip.js?v=1.9.18-249"></script>
+<script src="../assets/js/rbmap.js?v=1.9.18-249"></script>
+<script src="../assets/js/gps-meter.js?v=1.9.18-249"></script>
+<script src="../assets/js/gpx-recorder.js?v=1.9.18-249"></script>
+<script src="../assets/js/rb-remote.js?v=1.9.18-249"></script>
+<script src="../assets/js/note-canvas.js?v=1.9.18-249"></script>
+<script src="../assets/js/qrcode.min.js?v=1.9.18-249"></script>
+<script src="../assets/js/rb-qr.js?v=1.9.18-249"></script>
+<script src="../assets/js/challenges.js?v=1.9.18-249"></script>
+<script src="../assets/js/i18n.es.js?v=1.9.18-249"></script>
+<script src="../assets/js/i18n.it.js?v=1.9.18-249"></script>
+<script src="../assets/js/i18n.de.js?v=1.9.18-249"></script>
+<script src="../assets/js/i18n.fr.js?v=1.9.18-249"></script>
+<script src="../assets/js/i18n.js?v=1.9.18-249"></script>
+<script src="../assets/js/app.js?v=1.9.18-249"></script>
+<script src="../assets/js/run-report.js?v=1.9.18-249"></script>
+<script src="../assets/js/cover-map.js?v=1.9.18-249"></script>
+<script src="../assets/js/run-card.js?v=1.9.18-249"></script>
+<script src="reader.js?v=1.9.18-249"></script>
 </body>
 </html>

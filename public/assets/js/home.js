@@ -2,6 +2,20 @@
 /* Home teaser: a few recent public roadbooks, as the shared roadbook cards (RBRoadbookCard). The
  * full searchable list lives at /roadbooks. */
 (function () {
+    const sceneSelector = document.querySelector('.scene-selector');
+    const adventureImage = document.getElementById('adventureImage');
+    if (!RBIsNativeApp() && sceneSelector && adventureImage) {
+        const scenes = { offroad: 'offroad.webp', moto: 'moto.webp', bike: 'bike.webp' };
+        sceneSelector.addEventListener('click', (event) => {
+            const button = event.target.closest('[data-scene]');
+            if (!button || !scenes[button.dataset.scene]) return;
+            adventureImage.src = RB_ROOT + 'assets/brand/' + scenes[button.dataset.scene];
+            sceneSelector.querySelectorAll('[data-scene]').forEach((option) => {
+                option.setAttribute('aria-pressed', String(option === button));
+            });
+        });
+    }
+
     const grid = document.getElementById('galleryGrid');
     if (!grid) return;
     const esc = RBesc, t = RBt; // shared helpers (app.js / i18n.js)

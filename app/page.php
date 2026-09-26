@@ -10,7 +10,7 @@ function page_version(): string {
 }
 function page_head_links(): void {
     $v = page_version(); ?>
-    <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+    <link rel="icon" href="/assets/brand/favicon-trail.png" type="image/png" sizes="96x96">
     <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
     <link rel="manifest" href="/manifest.json">
     <link rel="stylesheet" href="/assets/fontawesome/css/all.min.css?v=<?= $v ?>">

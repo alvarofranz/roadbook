@@ -241,13 +241,21 @@
             doc.rect(x, y, CW, h);
             doc.line(x + colDist, y, x + colDist, y + h);
             doc.line(x + colDist + colVig, y, x + colDist + colVig, y + h);
-            // distance cell: big total · small partial · boxed number
-            doc.setTextColor(20); doc.setFont('helvetica', 'bold'); doc.setFontSize(14);
-            doc.text(km(n.distance), x + pad, y + 8);
-            doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
-            doc.text(km(n.partial_distance), x + pad, y + h - pad);
-            doc.setDrawColor(80); doc.setLineWidth(0.3); doc.rect(x + colDist - 11, y + h - 8, 9, 6);
-            doc.setFont('helvetica', 'bold'); doc.text(String(n.num), x + colDist - 6.5, y + h - 3.6, { align: 'center' });
+            // the FIA distance cell (#1008): the total big and centred over the foot row — the
+            // partial boxed in the bottom-left corner, the note number small and black bottom-right
+            const footH = 6.5;
+            doc.setTextColor(20); doc.setFont('helvetica', 'bold'); doc.setFontSize(15);
+            doc.text(km(n.distance), x + colDist / 2, y + (h - footH) / 2, { align: 'center', baseline: 'middle' });
+            doc.setFontSize(10);
+            const partial = km(n.partial_distance), partialW = doc.getTextWidth(partial) + 2 * pad;
+            doc.setDrawColor(20); doc.setLineWidth(0.3);
+            doc.line(x, y + h - footH, x + partialW, y + h - footH);
+            doc.line(x + partialW, y + h - footH, x + partialW, y + h);
+            doc.text(partial, x + pad, y + h - footH / 2, { baseline: 'middle' });
+            doc.setFontSize(7);
+            const num = String(n.num), numW = doc.getTextWidth(num) + 2, numH = 4;
+            doc.setFillColor(20); doc.rect(x + colDist - numW, y + h - numH, numW, numH, 'F');
+            doc.setTextColor(255); doc.text(num, x + colDist - numW / 2, y + h - numH / 2, { align: 'center', baseline: 'middle' });
             // tulip, fitted and centred in its cell
             if (tulip) {
                 const aw = colVig - 2 * pad, ah = h - 2 * pad, ar = 230 / 162;

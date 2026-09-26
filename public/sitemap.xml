@@ -16,4 +16,7 @@
   <url><loc>https://rdbk.app/privacy/</loc><priority>0.3</priority></url>
   <url><loc>https://rdbk.app/terms/</loc><priority>0.3</priority></url>
   <url><loc>https://rdbk.app/contact/</loc><priority>0.3</priority></url>
+  <url><loc>https://rdbk.app/4x4-overland/</loc><priority>0.8</priority></url>
+  <url><loc>https://rdbk.app/moto-enduro/</loc><priority>0.8</priority></url>
+  <url><loc>https://rdbk.app/bike-mtb/</loc><priority>0.8</priority></url>
 </urlset>

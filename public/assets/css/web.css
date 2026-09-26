@@ -1,0 +1,201 @@
+/* The public website's marketing layout (landing, discipline pages, feature and reading pages).
+   The palette, the logo and the card illustrations are the brand's everywhere (app.css); only this
+   landing layout is web-only — the app opens on its own home screen instead. */
+html:not(.native) .site-page { background: var(--bg); }
+html:not(.native) .site-page .wrap { max-width: 1240px; padding-inline: 2rem; }
+html:not(.native) .site-page .topbar .wrap { height: 76px; }
+html:not(.native) .site-page .topnav { gap: 1.8rem; }
+html:not(.native) .site-page .brand { font-size: 1.25rem; letter-spacing: -.04em; gap: .7rem; }
+html:not(.native) .site-page .brand-logo { width: 44px; height: 44px; }
+html:not(.native) .site-page .btn { border-radius: 7px; min-height: 48px; }
+html:not(.native) .site-page .btn-primary { background: var(--sand); text-shadow: none; }
+html:not(.native) .site-page section.block { padding-block: 5rem; }
+html:not(.native) .site-page .section-head { margin-bottom: 2rem; align-items: end; gap: 2rem; }
+html:not(.native) .site-page .section-head > div { min-width: 0; }
+html:not(.native) .site-page .section-head h2 { font-size: clamp(1.8rem, 3.2vw, 2.6rem); line-height: 1.15; letter-spacing: -.045em; }
+html:not(.native) .site-page .section-lead { max-width: 40ch; margin: 0; font-size: .95rem; color: var(--muted); }
+html:not(.native) .site-page .eyebrow { display: flex; align-items: center; gap: .65rem; margin: 0 0 1rem; color: var(--sand); font-size: .7rem; line-height: 1.6; font-weight: 800; text-transform: uppercase; letter-spacing: .16em; }
+html:not(.native) .site-page .text-link { display: inline-flex; align-items: center; gap: .8rem; color: var(--text); font-weight: 600; font-size: .88rem; }
+html:not(.native) .site-page .text-link i { color: var(--sand); font-size: .8rem; }
+
+/* The landscape is a backdrop; every word and action stays real, selectable HTML. */
+html:not(.native) .adventure-hero { position: relative; isolation: isolate; overflow: hidden; background: #101313; }
+html:not(.native) .adventure-image { position: absolute; z-index: -2; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 56%; }
+html:not(.native) .adventure-hero::after { content: ''; position: absolute; z-index: -1; inset: 0; background: linear-gradient(90deg, #101313 0%, rgba(16,19,19,.96) 15%, rgba(16,19,19,.78) 35%, rgba(16,19,19,.1) 78%), linear-gradient(0deg, #101313 0%, transparent 30%); pointer-events: none; }
+html:not(.native) .adventure-content { padding-top: 6rem; padding-bottom: 2rem; }
+html:not(.native) .adventure-brand { display: none; }
+html:not(.native) .adventure-brand img { flex-shrink: 0; }
+html:not(.native) .signal-dot { flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--sand); box-shadow: 0 0 0 4px rgba(var(--sand-rgb), .12); }
+html:not(.native) .adventure-hero h1 { max-width: 12ch; margin: 1.5rem 0; font-size: clamp(3rem, 5.4vw, 5rem); font-weight: 850; line-height: 1.04; letter-spacing: -.055em; }
+html:not(.native) .adventure-hero h1 span { color: var(--sand); }
+html:not(.native) .adventure-hero .lead { max-width: 43ch; margin: 0 0 2rem; font-size: 1.08rem; line-height: 1.75; color: #c5c8c6; }
+html:not(.native) .adventure-hero .btnrow { gap: .75rem; }
+html:not(.native) .adventure-hero .btn { font-size: .88rem; padding: .9rem 1.25rem; }
+html:not(.native) .adventure-hero .btn-ghost { background: rgba(16,19,19,.75); border-color: rgba(255,255,255,.25); }
+html:not(.native) .adventure-promise { display: flex; align-items: baseline; gap: .45rem; margin: 1rem 0 0; font-size: .73rem; color: #adb3af; }
+html:not(.native) .adventure-promise i { color: var(--sand); }
+html:not(.native) .adventure-bottom { display: flex; align-items: end; justify-content: space-between; gap: 1.5rem; margin-top: 4.5rem; }
+html:not(.native) .scene-selector { display: flex; flex-wrap: wrap; gap: .6rem; }
+html:not(.native) .scene-button { display: inline-flex; align-items: center; gap: .65rem; padding: .85rem 1rem; background: rgba(16,19,19,.7); border: 1px solid rgba(255,255,255,.16); border-radius: 5px; color: #b9bfbb; font: inherit; font-weight: 650; font-size: .8rem; cursor: pointer; transition: border-color .2s, color .2s, background .2s; }
+html:not(.native) .scene-button:hover { color: var(--text); border-color: var(--sand); }
+html:not(.native) .scene-button[aria-pressed="true"] { color: var(--text); border-color: var(--sand); background: rgba(var(--sand-rgb), .08); }
+html:not(.native) .scene-button[aria-pressed="true"] i { color: var(--sand); }
+html:not(.native) .scene-number { font-family: ui-monospace, monospace; font-size: .62rem; color: var(--muted); }
+html:not(.native) .adventure-scroll { display: flex; align-items: center; gap: 1rem; padding-bottom: .75rem; color: #c1c6c2; font-size: .7rem; }
+html:not(.native) .adventure-scroll i { color: var(--sand); }
+html:not(.native) .trail-strip { border-block: 1px solid var(--line); background: #141717; }
+html:not(.native) .trail-strip .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; padding-block: 1.15rem; }
+html:not(.native) .trail-strip span, html:not(.native) .trail-strip a { display: inline-flex; align-items: center; gap: .7rem; font-size: .75rem; color: var(--muted); }
+html:not(.native) .trail-strip i { color: var(--sand); }
+
+/* Each discipline has its own introduction and practical roadbook guidance. */
+html:not(.native) #adventures { scroll-margin-top: 80px; }
+html:not(.native) .adventure-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.2rem; }
+html:not(.native) .adventure-card { min-width: 0; min-height: 425px; position: relative; isolation: isolate; display: flex; align-items: end; overflow: hidden; border: 1px solid var(--line); border-radius: 9px; color: var(--text); background: var(--card); }
+html:not(.native) .adventure-card:hover { text-decoration: none; border-color: rgba(var(--sand-rgb), .6); }
+html:not(.native) .adventure-card img { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; transition: transform .35s ease; }
+html:not(.native) .adventure-card:nth-child(2) img { object-position: 36% center; }
+html:not(.native) .adventure-card:nth-child(3) img { object-position: 38% center; }
+html:not(.native) .adventure-card::after { content: ''; position: absolute; z-index: -1; inset: 0; background: linear-gradient(0deg, rgba(8,11,10,.98), rgba(8,11,10,.6) 40%, transparent 80%); }
+html:not(.native) .adventure-card:hover img { transform: scale(1.035); }
+html:not(.native) .adventure-card-copy { width: 100%; padding: 1.8rem; }
+html:not(.native) .adventure-card .eyebrow { font-size: .62rem; margin-bottom: .5rem; }
+html:not(.native) .adventure-card h3 { margin: 0 0 .6rem; font-size: 1.85rem; letter-spacing: -.035em; line-height: 1.15; }
+html:not(.native) .adventure-card p { margin: 0 0 1.4rem; color: #d0d3d1; font-size: .85rem; max-width: 30ch; }
+html:not(.native) .adventure-card-link { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,.2); font-size: .75rem; font-weight: 650; }
+html:not(.native) .adventure-card-link i { color: var(--sand); }
+
+html:not(.native) .site-page #features { border-block: 1px solid var(--line); background: #141717; }
+html:not(.native) .site-page .workflow { gap: 0; margin: 0 0 2rem; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; }
+html:not(.native) .site-page .workflow .wf-step { flex-direction: row; align-items: center; gap: .8rem; padding: 1.5rem 1.2rem; border: 0; border-radius: 0; background: transparent; text-align: left; }
+html:not(.native) .site-page .workflow li + li { border-left: 1px solid var(--line); }
+html:not(.native) .site-page .workflow .wf-step::before { position: static; content: '0' counter(wf); font-family: ui-monospace, monospace; font-weight: 400; font-size: .65rem; color: var(--muted); }
+html:not(.native) .site-page .workflow .wf-step i { width: auto; height: auto; border: 0; background: transparent; border-radius: 0; font-size: 1rem; }
+html:not(.native) .site-page .workflow .wf-step span { font-size: .8rem; }
+html:not(.native) .site-page .workflow .wf-step:hover { transform: none; background: rgba(var(--sand-rgb), .05); }
+html:not(.native) .site-page .flow { gap: 1rem; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+html:not(.native) .site-page .flow .step { position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; align-items: start; text-align: left; background: var(--bg); padding: 1.7rem; border-radius: 8px; }
+html:not(.native) .site-page .tool-art { position: absolute; z-index: -2; inset: 0 0 auto; width: 100%; height: 210px; object-fit: cover; object-position: center 28%; opacity: .7; pointer-events: none; }
+html:not(.native) .site-page .flow .step:has(.tool-art)::after { content: ''; position: absolute; z-index: -1; inset: 0; pointer-events: none; background: linear-gradient(0deg, var(--bg) calc(100% - 205px), transparent calc(100% - 65px)), linear-gradient(90deg, rgba(16,19,19,.92), rgba(16,19,19,.35) 70%); }
+html:not(.native) .site-page .flow .step:hover { border-color: rgba(var(--sand-rgb), .5); }
+html:not(.native) .site-page .flow .step > i { background: rgba(var(--sand-rgb), .08); color: var(--sand); border: 1px solid rgba(var(--sand-rgb), .18); border-radius: 7px; width: 2.8rem; height: 2.8rem; font-size: 1.1rem; }
+html:not(.native) .site-page .flow .step h3 { margin: 1rem 0 .55rem; font-size: 1.08rem; letter-spacing: -.02em; }
+html:not(.native) .site-page .flow .step p { line-height: 1.7; }
+html:not(.native) .site-page .flow .feat-more { padding-top: 1.2rem; margin-top: auto; }
+html:not(.native) .site-page #gallery { padding-bottom: 0; }
+html:not(.native) .site-page .gallery-card { border-radius: 9px; box-shadow: none; }
+html:not(.native) .site-page .gallery-empty { width: 100%; grid-column: 1 / -1; padding: 2.5rem; border: 1px dashed var(--line); border-radius: 8px; color: var(--muted); text-align: center; }
+
+html:not(.native) .field-banner { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); overflow: hidden; background: var(--card); border: 1px solid var(--line); border-radius: 10px; }
+html:not(.native) .field-banner > img { width: 100%; height: 100%; min-height: 440px; object-fit: cover; object-position: 37% center; }
+html:not(.native) .field-copy { padding: 3rem; align-self: center; min-width: 0; }
+html:not(.native) .field-copy h2 { font-size: clamp(1.8rem, 2.8vw, 2.5rem); line-height: 1.15; letter-spacing: -.04em; margin: 0 0 1.2rem; }
+html:not(.native) .field-copy > p:not(.eyebrow) { font-size: .95rem; color: var(--muted); line-height: 1.75; }
+html:not(.native) .field-copy .get-app { margin: 1.5rem 0; }
+html:not(.native) .field-copy .store-badge { min-width: 150px; border-color: #59605c; border-radius: 7px; }
+html:not(.native) .field-copy .store-badge b { font-size: 1rem; }
+html:not(.native) .site-page .foot { margin-top: 0; padding-top: 3.5rem; background: #0b0e0d; }
+html:not(.native) .site-page .foot-col h4 { letter-spacing: .12em; font-size: .7rem; }
+html:not(.native) .site-page .foot-bottom { margin-top: 2.5rem; }
+
+/* A consistent reading rhythm for About, guides, install and tool presentation pages. */
+html:not(.native) .site-page .page-col { max-width: 1120px; padding-top: 4rem; }
+html:not(.native) .site-page .page-col > h1,
+html:not(.native) .site-page .about-intro h1,
+html:not(.native) .site-page .doc > h1,
+html:not(.native) .site-page .wiki-head h1,
+html:not(.native) .site-page .tool-titlebar h1 { font-size: clamp(2.3rem, 4vw, 3.5rem); line-height: 1.12; letter-spacing: -.045em; }
+html:not(.native) .site-page .feat-page { max-width: 1180px; padding-top: 3rem; }
+html:not(.native) .site-page .feat-hero { padding-block: 2rem 3.5rem; margin-bottom: 2.5rem; border-bottom: 1px solid var(--line); background: radial-gradient(ellipse at 50% 0%, rgba(var(--sand-rgb), .09), transparent 70%); }
+html:not(.native) .site-page .feat-hero h1 { font-size: clamp(2rem, 3.7vw, 3.2rem); line-height: 1.15; letter-spacing: -.045em; }
+html:not(.native) .site-page .feat-hero .lead { margin-top: 1.5rem; }
+html:not(.native) .site-page .feat-list { grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); }
+html:not(.native) .site-page .feat-section .feat-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+html:not(.native) .site-page .feat-item { padding: 1.5rem; border-radius: 8px; }
+html:not(.native) .site-page .feat-item > div { min-width: 0; }
+html:not(.native) .site-page .feat-item p { line-height: 1.7; }
+html:not(.native) .site-page .feat-nav-link { background: transparent; font-size: .75rem; }
+html:not(.native) .site-page .about-sec { margin-top: 4rem; padding-top: 2.5rem; }
+html:not(.native) .site-page .about-sec h2 { font-size: 1.8rem; letter-spacing: -.035em; }
+html:not(.native) .site-page .team-card { background: var(--card); border-radius: 8px; padding: 1.75rem; }
+html:not(.native) .site-page .about-figure img, html:not(.native) .site-page .about-gallery img { border-radius: 8px; }
+html:not(.native) .site-page .wiki-container { max-width: 1080px; padding-block: 2rem 4rem; }
+html:not(.native) .site-page .wiki-nav { padding: 1.25rem; background: var(--card); border: 1px solid var(--line); border-radius: 8px; }
+html:not(.native) .site-page .wiki-nav a { border-radius: 5px; }
+html:not(.native) .site-page .doc { padding-top: 3rem; }
+html:not(.native) .site-page #rbWrap, html:not(.native) .site-page #evWrap { padding-top: 3.5rem; }
+
+/* Discipline pages keep the landscape separate from the technical tool illustrations. */
+html:not(.native) .discipline-content { padding-block: 2rem 5rem; }
+html:not(.native) .breadcrumbs { display: flex; flex-wrap: wrap; align-items: center; gap: .7rem; margin-bottom: 3rem; color: #c5c8c6; font-size: .75rem; }
+html:not(.native) .breadcrumbs a { color: inherit; }
+html:not(.native) .breadcrumbs i { color: var(--sand); font-size: .55rem; }
+html:not(.native) .discipline-hero h1 { max-width: 19ch; font-size: clamp(2.7rem, 4.5vw, 4.25rem); }
+html:not(.native) .discipline-hero .lead { max-width: 49ch; }
+html:not(.native) .discipline-content .btnrow, html:not(.native) .discipline-answers .btnrow, html:not(.native) .discipline-related .btnrow { justify-content: flex-start; }
+html:not(.native) .discipline-intro, html:not(.native) .discipline-faq { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 4rem; align-items: start; }
+html:not(.native) .discipline-intro h2, html:not(.native) .discipline-faq h2, html:not(.native) .discipline-related h2 { margin: 0; font-size: clamp(1.8rem, 3vw, 2.5rem); line-height: 1.2; letter-spacing: -.04em; }
+html:not(.native) .discipline-intro p { margin: 0; color: var(--muted); line-height: 1.9; }
+html:not(.native) .site-page .discipline-tools { background: #141717; border-block: 1px solid var(--line); }
+html:not(.native) .discipline-answers { min-width: 0; }
+html:not(.native) .discipline-answers details { border-bottom: 1px solid var(--line); padding-block: 1.4rem; }
+html:not(.native) .discipline-answers details:first-child { padding-top: 0; }
+html:not(.native) .discipline-answers summary { cursor: pointer; color: var(--text); font-size: 1rem; font-weight: 650; }
+html:not(.native) .discipline-answers summary::marker { color: var(--sand); }
+html:not(.native) .discipline-answers details p { margin: 1rem 0 0; font-size: .95rem; color: var(--muted); line-height: 1.8; }
+html:not(.native) .discipline-answers .btnrow { gap: 1.5rem; margin-top: 1.5rem; }
+html:not(.native) .site-page .discipline-related { padding-top: 0; }
+html:not(.native) .discipline-related .btnrow { margin-top: 1.5rem; }
+
+@media (max-width: 1024px) {
+    html:not(.native) .adventure-content { padding-top: 2rem; }
+    html:not(.native) .adventure-brand { display: inline-flex; margin-bottom: 3rem; }
+    html:not(.native) .adventure-brand span { color: var(--sand); margin-left: -.65rem; }
+    html:not(.native) .site-page section.block { padding-block: 3.5rem; }
+    html:not(.native) .adventure-bottom { margin-top: 3rem; }
+    html:not(.native) .adventure-card { min-height: 385px; }
+    html:not(.native) .adventure-card-copy { padding: 1.2rem; }
+    html:not(.native) .adventure-card h3 { font-size: 1.5rem; }
+    html:not(.native) .site-page .workflow .wf-step { flex-wrap: wrap; padding: 1.2rem .8rem; }
+    html:not(.native) .field-copy { padding: 2rem; }
+    html:not(.native) .discipline-intro, html:not(.native) .discipline-faq { gap: 2rem; }
+}
+@media (max-width: 760px) {
+    html:not(.native) .site-page .wrap { padding-inline: 1.25rem; }
+    html:not(.native) .site-page .section-head { align-items: start; flex-direction: column; gap: 1rem; }
+    html:not(.native) .adventure-image { object-position: 60% center; }
+    html:not(.native) .adventure-hero::after { background: linear-gradient(90deg, rgba(16,19,19,.92), rgba(16,19,19,.5)), linear-gradient(0deg, #101313, transparent 45%); }
+    html:not(.native) .adventure-hero h1 { font-size: clamp(2.8rem, 9vw, 4.5rem); }
+    html:not(.native) .adventure-hero .lead { max-width: 40ch; font-size: .98rem; }
+    html:not(.native) .adventure-scroll { display: none; }
+    html:not(.native) .scene-selector { gap: .4rem; }
+    html:not(.native) .scene-button { padding: .75rem .8rem; gap: .5rem; }
+    html:not(.native) .adventure-grid { grid-template-columns: 1fr; }
+    html:not(.native) .adventure-card { min-height: 360px; }
+    html:not(.native) .adventure-card img { object-position: center; }
+    html:not(.native) .adventure-card:nth-child(2) img, html:not(.native) .adventure-card:nth-child(3) img { object-position: center 45%; }
+    html:not(.native) .adventure-card-copy { padding: 1.6rem; }
+    html:not(.native) .adventure-card h3 { font-size: 2rem; }
+    html:not(.native) .site-page .flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    html:not(.native) .site-page .workflow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    html:not(.native) .site-page .workflow li:nth-child(3) { border-left: 0; }
+    html:not(.native) .site-page .workflow li:nth-child(n+3) { border-top: 1px solid var(--line); }
+    html:not(.native) .field-banner { grid-template-columns: 1fr; }
+    html:not(.native) .field-banner > img { min-height: 0; max-height: 320px; aspect-ratio: 16 / 10; }
+    html:not(.native) .field-copy { padding: 1.75rem; }
+    html:not(.native) .site-page .page-col { padding-top: 2rem; }
+    html:not(.native) .site-page .feat-page { padding-top: 1rem; }
+    html:not(.native) .site-page .feat-section .feat-list { grid-template-columns: 1fr; }
+    html:not(.native) .discipline-content { padding-block: 1.5rem 3rem; }
+    html:not(.native) .breadcrumbs { margin-bottom: 2.5rem; }
+    html:not(.native) .discipline-hero h1 { font-size: clamp(2.5rem, 7.5vw, 3.5rem); }
+    html:not(.native) .discipline-intro, html:not(.native) .discipline-faq { grid-template-columns: 1fr; }
+    html:not(.native) .site-page .discipline-tools .flow { grid-template-columns: 1fr; }
+}
+@media (max-width: 440px) {
+    html:not(.native) .site-page .flow { grid-template-columns: 1fr; }
+    html:not(.native) .adventure-hero .btnrow { align-items: stretch; flex-direction: column; }
+    html:not(.native) .adventure-hero .btn { justify-content: center; }
+    html:not(.native) .scene-number { display: none; }
+    html:not(.native) .field-copy .store-badge { flex: 1 1 150px; }
+}

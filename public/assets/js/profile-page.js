@@ -16,7 +16,7 @@
         const u = data.user, s = data.stats;
         $('pfLoading').hidden = true; $('pfContent').hidden = false;
         $('pfName').textContent = '@' + u.username;
-        $('pfAvatar').src = u.avatar ? RBMediaSrc(u.avatar) : '/assets/icon.svg';
+        $('pfAvatar').src = u.avatar ? RBMediaSrc(u.avatar) : '/assets/brand/logo-minimal.webp';
         $('pfMeta').textContent = [u.organization, t('Member since') + ' ' + RBFmtDate(u.member_since)].filter(Boolean).join(' · ');
         $('pfBio').textContent = u.bio || '';
         $('pfBio').hidden = !u.bio;

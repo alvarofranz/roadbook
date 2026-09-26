@@ -217,24 +217,24 @@ window.RBMap = class RBMap {
         m.addSource('rb-track', { type: 'geojson', data: this._empty() });
         m.addLayer({ id: 'rb-track', type: 'line', source: 'rb-track', paint: { 'line-color': '#ff5a45', 'line-width': 4 } });
         m.addSource('rb-gap', { type: 'geojson', data: this._empty() });
-        m.addLayer({ id: 'rb-gap', type: 'line', source: 'rb-gap', paint: { 'line-color': '#e8b059', 'line-width': 2, 'line-dasharray': [2, 2] } });
+        m.addLayer({ id: 'rb-gap', type: 'line', source: 'rb-gap', paint: { 'line-color': '#ff7a1a', 'line-width': 2, 'line-dasharray': [2, 2] } });
         // the selected note's rings (#945): its detection radius, and — dashed, subtle — the stretch
         // of track whose points shape its tulip
         m.addSource('rb-shape-ring', { type: 'geojson', data: this._empty() });
         m.addLayer({ id: 'rb-shape-ring', type: 'line', source: 'rb-shape-ring', paint: { 'line-color': '#ffffff', 'line-opacity': 0.45, 'line-width': 1.5, 'line-dasharray': [2.5, 2] } });
         m.addSource('rb-reach-ring', { type: 'geojson', data: this._empty() });
-        m.addLayer({ id: 'rb-reach-ring-f', type: 'fill', source: 'rb-reach-ring', paint: { 'fill-color': '#e8b059', 'fill-opacity': 0.14 } });
-        m.addLayer({ id: 'rb-reach-ring', type: 'line', source: 'rb-reach-ring', paint: { 'line-color': '#e8b059', 'line-width': 2 } });
+        m.addLayer({ id: 'rb-reach-ring-f', type: 'fill', source: 'rb-reach-ring', paint: { 'fill-color': '#ff7a1a', 'fill-opacity': 0.14 } });
+        m.addLayer({ id: 'rb-reach-ring', type: 'line', source: 'rb-reach-ring', paint: { 'line-color': '#ff7a1a', 'line-width': 2 } });
         m.addSource('rb-sel', { type: 'geojson', data: this._empty() });
-        m.addLayer({ id: 'rb-sel', type: 'circle', source: 'rb-sel', paint: { 'circle-radius': 11, 'circle-color': 'rgba(232,176,89,.35)', 'circle-stroke-color': '#e8b059', 'circle-stroke-width': 3 } });
+        m.addLayer({ id: 'rb-sel', type: 'circle', source: 'rb-sel', paint: { 'circle-radius': 11, 'circle-color': 'rgba(255,122,26,.35)', 'circle-stroke-color': '#ff7a1a', 'circle-stroke-width': 3 } });
         m.addSource('rb-wpts', { type: 'geojson', data: this._empty() });
         m.addLayer({ id: 'rb-wpts', type: 'circle', source: 'rb-wpts', paint: { 'circle-radius': 9, 'circle-color': '#3b82f6', 'circle-stroke-color': '#fff', 'circle-stroke-width': 2 } });
-        m.addLayer({ id: 'rb-wpts-l', type: 'symbol', source: 'rb-wpts', layout: { 'text-field': ['get', 'num'], 'text-font': ['Noto Sans Bold'], 'text-size': 12, 'text-offset': [0, -1.4] }, paint: { 'text-color': '#fff', 'text-halo-color': '#0e1116', 'text-halo-width': 1.4 } });
+        m.addLayer({ id: 'rb-wpts-l', type: 'symbol', source: 'rb-wpts', layout: { 'text-field': ['get', 'num'], 'text-font': ['Noto Sans Bold'], 'text-size': 12, 'text-offset': [0, -1.4] }, paint: { 'text-color': '#fff', 'text-halo-color': '#101313', 'text-halo-width': 1.4 } });
         m.addSource('rb-live', { type: 'geojson', data: this._empty() });
         m.addLayer({ id: 'rb-live', type: 'line', source: 'rb-live', paint: { 'line-color': '#3ad29f', 'line-width': 4 } });
         m.addSource('rb-photos', { type: 'geojson', data: this._empty() });
         m.addLayer({ id: 'rb-photos', type: 'circle', source: 'rb-photos', paint: { 'circle-radius': 12, 'circle-color': '#3a8dff', 'circle-stroke-color': '#fff', 'circle-stroke-width': 2 } });
-        m.addLayer({ id: 'rb-photos-i', type: 'symbol', source: 'rb-photos', layout: { 'text-field': 'IMG', 'text-font': ['Noto Sans Bold'], 'text-size': 10, 'text-allow-overlap': true }, paint: { 'text-color': '#fff', 'text-halo-color': '#0e1116', 'text-halo-width': 0.8 } });
+        m.addLayer({ id: 'rb-photos-i', type: 'symbol', source: 'rb-photos', layout: { 'text-field': 'IMG', 'text-font': ['Noto Sans Bold'], 'text-size': 10, 'text-allow-overlap': true }, paint: { 'text-color': '#fff', 'text-halo-color': '#101313', 'text-halo-width': 0.8 } });
         m.addSource('rb-pos', { type: 'geojson', data: this._empty() });
         m.addLayer({ id: 'rb-pos', type: 'circle', source: 'rb-pos', paint: { 'circle-radius': 7, 'circle-color': '#5aa9ff', 'circle-stroke-color': '#fff', 'circle-stroke-width': 2.5 } });
         // Guidance to one waypoint (Reader per-note map, #485): a line from the live position
@@ -255,7 +255,7 @@ window.RBMap = class RBMap {
     setPin(pt) {
         if (!this.map) return;
         if (this._pin) { this._pin.remove(); this._pin = null; }
-        if (pt) this._pin = new maplibregl.Marker({ color: '#e8b059', scale: 0.8 }).setLngLat([pt.lon, pt.lat]).addTo(this.map);
+        if (pt) this._pin = new maplibregl.Marker({ color: '#ff7a1a', scale: 0.8 }).setLngLat([pt.lon, pt.lat]).addTo(this.map);
     }
     // "you are here" marker; follow=true recenters on it. With a `heading` (course in
     // degrees) the dot becomes a chevron pointing that way and — unless north is locked
@@ -391,7 +391,7 @@ window.RBMap = class RBMap {
         if (!this._guideArrow) {
             const el = document.createElement('div');
             el.className = 'rb-guide-arrow';
-            el.innerHTML = '<svg viewBox="0 0 64 20" width="100%" height="100%"><line x1="3" y1="10" x2="46" y2="10" stroke="#e8b059" stroke-width="6" stroke-linecap="round"/><path d="M42 2 L62 10 L42 18 z" fill="#e8b059"/></svg>';
+            el.innerHTML = '<svg viewBox="0 0 64 20" width="100%" height="100%"><line x1="3" y1="10" x2="46" y2="10" stroke="#ff7a1a" stroke-width="6" stroke-linecap="round"/><path d="M42 2 L62 10 L42 18 z" fill="#ff7a1a"/></svg>';
             this._guideArrow = new maplibregl.Marker({ element: el, anchor: 'left', rotationAlignment: 'map' }).setLngLat([from.lon, from.lat]).addTo(this.map);
         }
         this._guideArrow.setLngLat([from.lon, from.lat]).setRotation(RB.geo.bearingDeg(from, to) - 90); // the artwork points east; rotation 0 is north

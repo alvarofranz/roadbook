@@ -737,7 +737,7 @@ describe('an open menu follows a language switch (#495)', () => {
     it('the app home tiles name themselves through i18n (#720)', () => {
         const home = read('public/index.html');
         expect(home).toContain('<b data-i18n="Record a route">Record a route</b>');
-        expect(home).toContain('<a class="choice-card center compact" href="editor/"><i class="fa-solid fa-pen"></i><b data-i18n="Editor">Editor</b></a>');
+        expect(home).toContain('<a class="choice-card center compact card-art" href="editor/"><i class="fa-solid fa-pen"></i><b data-i18n="Editor">Editor</b><img class="card-art-image" src="assets/brand/tools/editor.webp"');
         expect(home).toContain('data-i18n-aria="RDBK sections"');
     });
 });

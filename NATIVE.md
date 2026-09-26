@@ -285,7 +285,7 @@ Install Referrer API (native, no third party); iOS has no clean equivalent.
 1. Put a 1024×1024 PNG icon at `assets/icon.png` and (optionally) a splash at
    `assets/splash.png` in the repo root.
 2. `npm i -D @capacitor/assets && npx capacitor-assets generate` — it produces every icon
-   and splash size for both platforms. (The splash background colour is already `#0e1116`.)
+   and splash size for both platforms. (The splash background colour is already the brand charcoal `#101313`.)
 
 ---
 

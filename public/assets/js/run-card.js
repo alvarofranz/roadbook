@@ -57,14 +57,14 @@
         ctx.font = `800 34px ${font}`; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
         const brandW = ctx.measureText('RDBK.app').width + 44;
         ctx.fillStyle = 'rgba(11,14,19,0.78)'; pill(ctx, SIDE - 8, 44, brandW, 60, 30);
-        ctx.fillStyle = '#e8b059'; ctx.fillText('RDBK.app', SIDE + 14, 75);
+        ctx.fillStyle = '#ff7a1a'; ctx.fillText('RDBK.app', SIDE + 14, 75);
 
         // the outcome, as a chip above the title
         let y = 842;
         const chip = report.completed ? t('Roadbook completed') : t('Run finished');
         ctx.font = `700 28px ${font}`;
         const chipW = ctx.measureText(chip).width + 40;
-        ctx.fillStyle = report.completed ? '#e8b059' : 'rgba(255,255,255,0.14)';
+        ctx.fillStyle = report.completed ? '#ff7a1a' : 'rgba(255,255,255,0.14)';
         pill(ctx, SIDE, y - 26, chipW, 52, 26);
         ctx.fillStyle = report.completed ? '#1b1307' : '#ffffff'; ctx.fillText(chip, SIDE + 20, y);
 
@@ -94,7 +94,7 @@
         });
 
         // where it lives: the runner's profile
-        ctx.font = `600 24px ${font}`; ctx.fillStyle = 'rgba(232,176,89,0.9)'; ctx.textAlign = 'right';
+        ctx.font = `600 24px ${font}`; ctx.fillStyle = 'rgba(255,122,26,0.9)'; ctx.textAlign = 'right';
         ctx.fillText(username ? 'rdbk.app/u/' + username : 'rdbk.app', W - SIDE, H - 50);
 
         try { return await new Promise((res) => canvas.toBlob((b) => res(b), 'image/png')); }

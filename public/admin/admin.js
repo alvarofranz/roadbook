@@ -49,7 +49,7 @@
             + (u.verified || u.system ? '' : badge('u-unverified', 'Unverified'));
     }
     const canManage = (u) => !u.system && (u.id === me || !u.is_admin || meSuper);
-    const avatarHtml = (u, cls) => `<img class="avatar ${cls}" src="${u.avatar ? esc(RBMediaSrc(u.avatar)) : '../assets/icon.svg'}" alt="" loading="lazy">`;
+    const avatarHtml = (u, cls) => `<img class="avatar ${cls}" src="${u.avatar ? esc(RBMediaSrc(u.avatar)) : '../assets/brand/logo-minimal.webp'}" alt="" loading="lazy">`;
     // "today", "yesterday", or the date — when a user was last active
     function whenText(ts) {
         if (!ts) return t('Never');

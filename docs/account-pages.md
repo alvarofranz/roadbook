@@ -114,7 +114,7 @@ Popola l'intestazione e i campi:
 |----------|--------------|
 | Nome visualizzato (`accName`) | `first_name + last_name`, fallback su `username` |
 | Handle (`accHandle`) | `@username · email` |
-| Avatar (`accAvatar`) | `user.avatar`, il cui URL salvato porta la versione dell'upload (`?v=`), così un re-upload si vede subito e poi resta in cache; fallback `../assets/icon.svg` |
+| Avatar (`accAvatar`) | `user.avatar`, il cui URL salvato porta la versione dell'upload (`?v=`), così un re-upload si vede subito e poi resta in cache; fallback `../assets/brand/logo-minimal.webp` (il logo del header) |
 | Nome / cognome (`pfFirst` / `pfLast`) | `user.first_name` / `user.last_name`, `maxlength="80"` |
 | Bio (`pfBio`) | `user.bio`, textarea `maxlength="500"` |
 | Organizzazione (`pfOrg`) | `user.organization` (testo libero — filtra la ricerca organizzatori negli eventi, #123) |
