@@ -561,8 +561,8 @@ Operational notes:
   FIA waypoint-type badge (`waypoint_type`) · vignette via `NoteCanvas.toSVG` · text, CAP, speed limit,
   coordinates) with no buttons on the row (#569), colour-coded by state (reached green · skipped
   pink · active red border · upcoming white) — and the ACTIVE row alone takes the live GPS
-  proximity state (blue as you close in, with the distance still to run). Advancing puts the next
-  note exactly at the **top** of the list (#844). Distances are measured **along the GPX track**, like
+  proximity state (blue as you close in, with the distance still to run). Advancing keeps the list
+  one note behind (#1006): the note just done on top, the note to drive to right under it. Distances are measured **along the GPX track**, like
   the roadbook's own partials: `RB.routeAhead` projects the fix onto the track around the active
   note, so partial driven + distance left = the note's partial, shown in km with two decimals, and
   every change of note re-anchors both odometers on the route (#846 · #847); only the validation

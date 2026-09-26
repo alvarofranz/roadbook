@@ -98,10 +98,11 @@ dimensioni e padding in [index.html](../public/reader/index.html)):
   done/skipped/active), senza ridisegnare
   ogni vignetta — così anche la mini-mappa per-nota aperta sopravvive all'avanzamento.
 - **Auto-scroll**: la vista si sposta sulla nota attiva *solo quando l'indice attivo
-  cambia davvero* (`lastScrollIdx`), non a ogni ridisegno, e mette la nota da raggiungere
-  **esattamente in cima** alla lista (#844): quella appena validata non serve più, e la strada davanti
-  prende tutto lo spazio. Il materiale messo prima di una nota (#542) fa parte della nota, quindi la
-  cima è il suo primo blocco.
+  cambia davvero* (`lastScrollIdx`), non a ogni ridisegno, e tiene la lista **una nota
+  indietro** (#1006): in cima resta la nota appena fatta, così il pilota può verificare l'ultimo
+  passo, e subito sotto c'è quella da raggiungere — dopo una validazione automatica come dopo una
+  manuale. All'inizio non c'è nulla dietro: in cima va la prima nota, con il materiale messo prima di
+  lei (#542), che fa parte della nota.
 - Il testo delle note va a capo tra le parole e sillaba nella lingua della pagina
   (`overflow-wrap: break-word; hyphens: auto`), mai tagliando una parola a caso.
 - Un cambio lingua a metà sessione (`rb-lang`) forza un re-render delle righe tradotte.
