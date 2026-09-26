@@ -74,7 +74,7 @@ ogni swap di stile** (MapLibre azzera source e layer custom su `setStyle`).
 | Source / Layer | Tipo | Cosa rappresenta | Colore |
 |----------------|------|------------------|--------|
 | `rb-track`     | line | la traccia del roadbook (`MultiLineString` se ci sono tagli) | rosso `#ff5a45` |
-| `rb-gap`       | line dashed | i connettori dei **tagli aperti** (buchi non riempiti, Editor) | sabbia `#e8b059` |
+| `rb-gap`       | line dashed | i connettori dei **tagli aperti** (buchi non riempiti, Editor) | arancione `#ff7a1a` |
 | `rb-sel`       | circle | l'alone della nota **selezionata** | sabbia translucido |
 | `rb-wpts` / `rb-wpts-l` | circle + symbol | i waypoint + l'etichetta col numero nota | **blu `#3b82f6`** / testo bianco |
 | `rb-live`      | line | la sub-traccia "adjust" / registrazione in overlay | verde `#3ad29f` |

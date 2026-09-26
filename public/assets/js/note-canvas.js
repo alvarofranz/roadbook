@@ -116,9 +116,9 @@ window.NoteCanvas = class NoteCanvas {
             g.addEventListener('pointerdown', (e) => this._startDrag(e, (vx, vy) => { const m = this.toM(vx, vy); ic.position = [r1(m[0]), r1(m[1])]; }, { type: 'icon', i }));
             this.svg.appendChild(g);
             if (this.sel && this.sel.type === 'icon' && this.sel.i === i) {
-                this.svg.appendChild(svg('rect', { class: 'vignette-box-dyn', x: cxi - s / 2, y: cyi - s / 2, width: s, height: s, fill: 'none', stroke: '#e8b059', 'stroke-width': 1.2, 'stroke-dasharray': '3 2', transform: `rotate(${ic.angle || 0} ${cxi} ${cyi})`, 'pointer-events': 'none' }));
+                this.svg.appendChild(svg('rect', { class: 'vignette-box-dyn', x: cxi - s / 2, y: cyi - s / 2, width: s, height: s, fill: 'none', stroke: '#ff7a1a', 'stroke-width': 1.2, 'stroke-dasharray': '3 2', transform: `rotate(${ic.angle || 0} ${cxi} ${cyi})`, 'pointer-events': 'none' }));
                 // drag the corner to resize (rotation-invariant; the +/- buttons still work too)
-                const rh = svg('rect', { class: 'vignette-box-dyn vignette-resize-handle', x: cxi + s / 2 - 5, y: cyi + s / 2 - 5, width: 10, height: 10, rx: 2, fill: '#5aa9ff', stroke: '#0e1116', 'stroke-width': 1.5 });
+                const rh = svg('rect', { class: 'vignette-box-dyn vignette-resize-handle', x: cxi + s / 2 - 5, y: cyi + s / 2 - 5, width: 10, height: 10, rx: 2, fill: '#5aa9ff', stroke: '#101313', 'stroke-width': 1.5 });
                 rh.addEventListener('pointerdown', (e) => this._startDrag(e, (vx, vy) => { ic.size = clampIconSize(r1(Math.hypot(vx - cxi, vy - cyi) * Math.SQRT2)); }, null));
                 this.svg.appendChild(rh);
             }
@@ -126,11 +126,11 @@ window.NoteCanvas = class NoteCanvas {
         // validation point: a small open circle where the trunk segments meet (the note's exact
         // spot), drawn LAST so junction vectors and centre-placed icons never hide it (#142);
         // pointer-inert so it never steals a tap from the drag handles underneath.
-        { const [vcx, vcy] = this.toV(0, 0); this.svg.appendChild(svg('circle', { class: 'vignette-box-dyn', cx: vcx, cy: vcy, r: 6, fill: '#fff', stroke: '#0e1116', 'stroke-width': 2.5, 'pointer-events': 'none' })); }
+        { const [vcx, vcy] = this.toV(0, 0); this.svg.appendChild(svg('circle', { class: 'vignette-box-dyn', cx: vcx, cy: vcy, r: 6, fill: '#fff', stroke: '#101313', 'stroke-width': 2.5, 'pointer-events': 'none' })); }
         this._toolbar();
     }
     _handle(vx, vy, onMove) {
-        const h = svg('circle', { class: 'vignette-box-dyn vignette-drag-handle', cx: vx, cy: vy, r: 6, fill: '#e8b059', stroke: '#0e1116', 'stroke-width': 1.5 });
+        const h = svg('circle', { class: 'vignette-box-dyn vignette-drag-handle', cx: vx, cy: vy, r: 6, fill: '#ff7a1a', stroke: '#101313', 'stroke-width': 1.5 });
         h.addEventListener('pointerdown', (e) => this._startDrag(e, onMove, null));
         this.svg.appendChild(h);
     }
@@ -220,7 +220,7 @@ window.NoteCanvas.toSVG = function (note, resolveIcon, ctx) {
     });
     // validation point: a small open circle where the trunk segments meet (the note's exact spot),
     // drawn LAST so junction vectors and centre-placed icons never hide it (#142)
-    s += `<circle cx="${cx}" cy="${cy}" r="6" fill="#fff" stroke="#0e1116" stroke-width="2.5"/>`;
+    s += `<circle cx="${cx}" cy="${cy}" r="6" fill="#fff" stroke="#101313" stroke-width="2.5"/>`;
     // Danger marks carry their own presentation attributes so the SVG is fully
     // self-contained (renders identically standalone — PDF — and inside the DOM).
     const danger = dangerMarks(note);

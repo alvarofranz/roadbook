@@ -183,7 +183,8 @@ DB/Convenzioni rapide below have counterparts there).
     in IndexedDB) with deferred upload + retry (Recorder + the Editor's Adjust on the trail).
   - **`app.css`**: shared design system — option cards (`.choice-grid` / `.choice-card`, `.row` ·
     `.center` · `.compact`: every "ways in" — the Editor's start and Export, the app home, the
-    Navigate hub, #979), buttons (`.btn*`), modals (`.modal`/`.modal-card`
+    Navigate hub, #979), `.card-art` (a card with a brand illustration from `assets/brand/` behind it —
+    the app home, the Navigate hub, the page intros; one palette and one logo on every surface), buttons (`.btn*`), modals (`.modal`/`.modal-card`
     + modifiers/`.modal-in`), `.btnrow` + alignment modifiers, `.head-row` (a heading with its
     actions on the same row — title left, actions right, stacking on a phone), `.toolbar` (a
     wrapping control row), `.icon-accent`/`.icon-danger`, `.field-grid`, `.btn-group`, `.grow`,

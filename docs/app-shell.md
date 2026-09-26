@@ -58,7 +58,7 @@ Le etichette comuni (`NAV_TRANSLATE`: Navigate, Events, Profile, Roadbooks) sono
 nomi di prodotto restano in inglese. Nella tab bar *Back* fa `history.back()` (o torna alla home)
 e *Profile* apre il menu account in un *dropup* (§3).
 
-**Logo / brand.** L'header contiene il brand `RDBK.app` con il logo (`assets/logo.png`) che linka
+**Logo / brand.** L'header contiene il brand `RDBK.app` con il logo (`assets/brand/logo-minimal.webp`, lo stesso sul web e nell’app) che linka
 alla home.
 
 **Footer (#729).** `renderChrome` crea anche il `<footer class="foot">`: il brand con il claim e

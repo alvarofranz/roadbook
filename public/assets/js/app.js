@@ -119,6 +119,7 @@
         </div>` + (computer ? `<a class="get-app-web" href="${ROOT}install/"><i class="fa-solid fa-desktop"></i> <span>${RBesc(RBt('Windows · Mac · Linux: install the web app'))}</span></a>` : '');
 
     function renderChrome() {
+        const brandLogo = 'assets/brand/logo-minimal.webp';
         const rootPath = new URL(ROOT, location.href).pathname;
         const rel = location.pathname.slice(rootPath.length).replace(/^\/+/, '');
         const seg = rel.split('/')[0] || '';
@@ -139,7 +140,7 @@
         if (!header) { header = document.createElement('header'); document.body.prepend(header); }
         header.className = 'topbar';
         header.innerHTML = `<div class="wrap">
-            <span class="brand-wrap"><a class="brand" href="${ROOT}"><img class="brand-logo" src="${ROOT}assets/logo.png" alt=""> RDBK.app</a></span>
+            <span class="brand-wrap"><a class="brand" href="${ROOT}"><img class="brand-logo" src="${ROOT}${brandLogo}" alt="" width="40" height="40"><span>RDBK<span class="brand-suffix">.app</span></span></a></span>
             <nav class="topnav" id="topnav">${navLinks}</nav>
         </div>`;
 
@@ -150,7 +151,7 @@
         const column = (title, links) => `<nav class="foot-col" aria-label="${RBesc(RBt(title))}"><h4 data-i18n="${title}">${RBesc(RBt(title))}</h4>${links}</nav>`;
         footer.innerHTML = `<div class="wrap foot-grid">
             <div class="foot-brand">
-                <a class="brand" href="${ROOT}"><img class="brand-logo" src="${ROOT}assets/logo.png" alt=""> RDBK.app</a>
+                <a class="brand" href="${ROOT}"><img class="brand-logo" src="${ROOT}${brandLogo}" alt="" width="40" height="40"><span>RDBK<span class="brand-suffix">.app</span></span></a>
                 <p data-i18n="foot.claim">${RBt('foot.claim')}</p>
                 <div data-get-app="stores"></div>
             </div>

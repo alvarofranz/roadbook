@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#0e1116">
+    <meta name="theme-color" content="#101313">
     <title data-i18n="seo.feat_editor.title">Roadbook Editor — RDBK.app</title>
     <meta name="description" data-i18n-content="seo.feat_editor.desc" content="Build a digital roadbook from a GPX or record it live — design rally notes, CAP headings, waypoints and icons, then export a self-contained .rdbk.">
     <link rel="canonical" href="https://rdbk.app/features/editor/">
@@ -19,13 +19,14 @@
     <meta name="twitter:title" content="Roadbook Editor — RDBK.app">
     <meta name="twitter:description" content="Build a digital roadbook from a GPX or record it live — design rally notes, CAP headings, waypoints and icons, then export a self-contained .rdbk.">
     <meta name="twitter:image" content="https://rdbk.app/assets/mockup.png">
-    <link rel="icon" href="../../assets/icon.svg" type="image/svg+xml">
+    <link rel="icon" href="../../assets/brand/favicon-trail.png" type="image/png" sizes="96x96">
     <link rel="apple-touch-icon" href="../../assets/apple-touch-icon.png">
     <link rel="manifest" href="../../manifest.json">
     <link rel="stylesheet" href="../../assets/fontawesome/css/all.min.css?v=1.9.18-245">
     <link rel="stylesheet" href="../../assets/css/app.css?v=1.9.18-245">
+    <link rel="stylesheet" href="../../assets/css/web.css?v=1.9.18-245">
 </head>
-<body>
+<body class="site-page">
 <header class="topbar"></header>
 
 <main class="feat-page">
@@ -107,9 +108,9 @@
             </table>
         </div>
         <div class="feat-list">
-            <div class="feat-item"><i class="fa-solid fa-floppy-disk"></i><div><h3 data-i18n="fp.editor.fmtRdbkT">RDBK (<code>.rdbk</code>) — the native format</h3><p data-i18n-html="fp.editor.fmtRdbkD">A single self-contained JSON file that embeds the track, every note and all the symbols it uses. Round-trips with <b>full fidelity</b> — icons, junction vectors, CAP, danger, waypoint types and radii all survive. This is the format to keep for re-editing. See the <a href="../../standard/">open .rdbk standard</a>.</p></div></div>
+            <div class="feat-item"><i class="fa-solid fa-floppy-disk"></i><div><h3 data-i18n-html="fp.editor.fmtRdbkT">RDBK (<code>.rdbk</code>) — the native format</h3><p data-i18n-html="fp.editor.fmtRdbkD">A single self-contained JSON file that embeds the track, every note and all the symbols it uses. Round-trips with <b>full fidelity</b> — icons, junction vectors, CAP, danger, waypoint types and radii all survive. This is the format to keep for re-editing. See the <a href="../../standard/">open .rdbk standard</a>.</p></div></div>
             <div class="feat-item"><i class="fa-solid fa-route"></i><div><h3 data-i18n="fp.editor.fmtGpxT">GPX</h3><p data-i18n-html="fp.editor.fmtGpxD">Standard GPS exchange. On import the track and any named waypoints become notes; if the GPX has waypoints but no track, a route is built through them to redraw. On export you choose track, waypoints (notes) or both, optionally tagging waypoints with <b>Garmin</b> or <b>OSMAnd</b> symbol names.</p></div></div>
-            <div class="feat-item"><i class="fa-solid fa-location-dot"></i><div><h3 data-i18n="fp.editor.fmtWptT">Garmin <code>.wpt</code></h3><p data-i18n-html="fp.editor.fmtWptD">A companion waypoint file: load it together with a GPX and its points fill in the notes when the GPX itself carries none. Import only.</p></div></div>
+            <div class="feat-item"><i class="fa-solid fa-location-dot"></i><div><h3 data-i18n-html="fp.editor.fmtWptT">Garmin <code>.wpt</code></h3><p data-i18n-html="fp.editor.fmtWptD">A companion waypoint file: load it together with a GPX and its points fill in the notes when the GPX itself carries none. Import only.</p></div></div>
             <div class="feat-item"><i class="fa-solid fa-diagram-project"></i><div><h3 data-i18n="fp.editor.fmtOrT">OpenRally GPX</h3><p data-i18n-html="fp.editor.fmtOrD">The rally <a href="https://github.com/openrally/openrally" target="_blank" rel="noopener">interoperability standard</a>. On <b>import</b> RDBK reads the route and each note's structured data — distance, CAP, danger grade and FIA waypoint type. But the vignette (the <i>tulip</i>) is stored by the OpenRally schema as an <b>opaque flat image</b> (a base64 PNG, sometimes wrapped in SVG), so it comes in as one full-box picture that <b>can't be broken back</b> into editable icons and junction vectors — that structure was lost when the producer exported. On <b>export</b> RDBK renders each note's vignette to an embedded SVG tulip, so the file stays self-contained. In short: OpenRally is a delivery / interchange format, <b>not an editable source</b> — for full re-editing keep the native <code>.rdbk</code>.</p></div></div>
             <div class="feat-item"><i class="fa-solid fa-earth-europe"></i><div><h3 data-i18n="fp.editor.fmtKmzT">KMZ (Google Earth)</h3><p data-i18n-html="fp.editor.fmtKmzD">Export your roadbook as a KMZ — a KML 2.2 document zipped for Google Earth. The track becomes a path and each note becomes a named placemark with its coordinates, so you can visualise the entire route and all waypoints in Earth's 3D terrain. Export only — for re-editing keep the native <code>.rdbk</code>.</p></div></div>
             <div class="feat-item"><i class="fa-solid fa-file-import"></i><div><h3 data-i18n="fp.editor.fmtLegacyT">Roadbook-Suite (legacy JSON)</h3><p data-i18n-html="fp.editor.fmtLegacyD">Older pre-standard JSON roadbooks open directly and are converted to the canonical model — the route, notes and vignettes come across so you can keep working. Import only.</p><a class="feat-more" href="https://www.roadbook-system.com/" target="_blank" rel="noopener">roadbook-system.com <i class="fa-solid fa-arrow-up-right-from-square"></i></a></div></div>

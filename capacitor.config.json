@@ -2,14 +2,14 @@
   "appId": "app.rdbk",
   "appName": "RDBK",
   "webDir": "public",
-  "backgroundColor": "#0e1116",
+  "backgroundColor": "#101313",
   "android": {
     "useLegacyBridge": true
   },
   "plugins": {
     "SplashScreen": {
       "launchShowDuration": 600,
-      "backgroundColor": "#0e1116",
+      "backgroundColor": "#101313",
       "showSpinner": false
     }
   }

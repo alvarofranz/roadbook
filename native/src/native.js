@@ -282,7 +282,7 @@ mirror.reconcile().then((restored) => { if (restored) window.location.reload(); 
  * of clock · battery · GPS (body.gps-live). One observer on the body's classes, so no page has to
  * call the bridge. */
 StatusBar.setStyle({ style: Style.Dark }).catch(() => {});
-if (Capacitor.getPlatform() === 'android') StatusBar.setBackgroundColor({ color: '#0e1116' }).catch(() => {});
+if (Capacitor.getPlatform() === 'android') StatusBar.setBackgroundColor({ color: '#101313' }).catch(() => {});
 // Android only: there hiding the bar gives its strip back to the tool. iOS keeps the notch's inset
 // with the bar hidden, so hiding would only leave an empty band where the clock was (#787).
 let statusBarHidden = false;

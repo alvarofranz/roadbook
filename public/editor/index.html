@@ -3,10 +3,10 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#0e1116">
+    <meta name="theme-color" content="#101313">
     <title>Roadbook Editor · RDBK.app</title>
     <meta name="robots" content="noindex">
-    <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
+    <link rel="icon" href="../assets/brand/favicon-trail.png" type="image/png" sizes="96x96">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
     <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.18-245">
@@ -15,7 +15,7 @@
     <style>
         .ed-row { display: flex; gap: .5rem; align-items: center; margin: .25rem 0; flex-wrap: wrap; }
         /* soft edit lock (#154): the read-only strip above the actions */
-        .lock-banner { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; background: rgba(232, 176, 89, .12); border: 1px solid var(--sand); color: var(--sand); border-radius: 10px; padding: .5rem .7rem; margin-bottom: .6rem; font-size: .85rem; }
+        .lock-banner { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; background: rgba(var(--sand-rgb), .12); border: 1px solid var(--sand); color: var(--sand); border-radius: 10px; padding: .5rem .7rem; margin-bottom: .6rem; font-size: .85rem; }
         .lock-banner .btn { width: auto; margin-left: auto; }
         .config-head { margin-top: .8rem; }
         .config-foot { margin-top: 1rem; }
@@ -63,7 +63,7 @@
         .wp-dd-menu { position: absolute; top: calc(100% + 4px); left: 0; z-index: 30; width: 250px; max-height: 300px; overflow: auto; background: var(--card); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); padding: .3rem; }
         .wp-dd-opt { display: flex; align-items: center; gap: .5rem; width: 100%; background: none; border: 0; color: var(--text); font: inherit; text-align: left; padding: .35rem .5rem; border-radius: 7px; cursor: pointer; }
         .wp-dd-opt:hover { background: var(--card-2); }
-        .wp-dd-opt.on { background: rgba(232, 176, 89, .14); }
+        .wp-dd-opt.on { background: rgba(var(--sand-rgb), .14); }
         .wp-dd-opt .wp-dd-cap { font-weight: 800; min-width: 2.6rem; }
         .wp-dd-opt .wp-dd-nm { color: var(--muted); font-size: .82rem; }
         /* The note's own parameters, under the palette: label over control, in even columns so
